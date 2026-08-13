@@ -1,0 +1,38 @@
+export const CHATGPT_DOM = {
+  conversationRoots: ["main"],
+  primaryMessages: 'section[data-testid^="conversation-turn-"]',
+  fallbackMessages: '[data-message-author-role], article[data-testid^="conversation-turn-"]',
+  roleContainers: '[data-message-author-role]',
+  turnRoleAttribute: "data-turn",
+  roleAttribute: "data-message-author-role",
+  messageIdAttributes: ["data-message-id", "data-testid", "id"],
+  activeTitleLinks: ['nav a[aria-current="page"][href]', 'a[aria-current="page"][href]'],
+  headingTitles: ["main h1", 'header h1'],
+  excludedContent: [
+    "script",
+    "style",
+    "noscript",
+    "button",
+    "svg",
+    "nav",
+    "footer",
+    "form",
+    '[aria-hidden="true"]',
+    '[data-testid*="copy-turn-action"]',
+    '[data-testid*="feedback"]',
+  ].join(","),
+  math: [
+    'annotation[encoding="application/x-tex"]',
+    "math",
+    "[data-latex]",
+    "[data-math]",
+    ".katex",
+    ".katex-display",
+    ".math",
+  ].join(","),
+  latexAnnotation: 'annotation[encoding="application/x-tex"]',
+  latexAttributes: ["data-latex", "data-math"],
+  codeLanguageAttributes: ["data-language", "data-lang"],
+} as const;
+
+export const CHATGPT_SUPPORTED_HOSTNAMES = ["chatgpt.com", "chat.openai.com"] as const;
