@@ -18,6 +18,19 @@ export function singleTurnFixture(): string {
   `, { title: "Single turn" });
 }
 
+export function accessibilityLabelsFixture(): string {
+  return shell(`
+    <article data-testid="conversation-turn-0" data-message-author-role="user" data-message-id="user-sr-only">
+      <h4 class="sr-only">You said:</h4>
+      <div><p>Keep the real user question.</p></div>
+    </article>
+    <article data-testid="conversation-turn-1" data-message-author-role="assistant" data-message-id="assistant-sr-only">
+      <h4 class="sr-only">ChatGPT said:</h4>
+      <div><p>Keep the real assistant answer.</p></div>
+    </article>
+  `, { title: "Accessibility labels" });
+}
+
 export function multiTurnFixture(): string {
   return shell(`
     <article data-message-author-role="user" data-message-id="u1"><p>One</p></article>

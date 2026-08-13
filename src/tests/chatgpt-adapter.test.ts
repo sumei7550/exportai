@@ -4,9 +4,11 @@ import { describe, expect, it } from "vitest";
 import { ChatGPTAdapter } from "../adapters/chatgpt/chatgpt-adapter";
 import { parseChatGPTBlocks } from "../adapters/chatgpt/chatgpt-block-parser";
 import type { AdapterParseResult } from "../adapters/types";
+import { exportConversationToMarkdown } from "../exporters/markdown-exporter";
 import type { Block, Conversation } from "../types/conversation";
 import {
   CHATGPT_LOCATION,
+  accessibilityLabelsFixture,
   emptyConversationFixture,
   missingTitleFixture,
   multiTurnFixture,
@@ -63,6 +65,44 @@ describe("ChatGPTAdapter messages", () => {
       ["user", "Hello"],
       ["assistant", "Hi there"],
     ]);
+  });
+
+  it("filters the user sr-only label without dropping the real user content", () => {
+    const conversation = conversationFrom(new ChatGPTAdapter().parse(parseDocument(accessibilityLabelsFixture()), CHATGPT_LOCATION));
+    const userMessage = conversation.messages[0];
+
+    expect(userMessage.originalText).toBe("Keep the real user question.");
+    expect(JSON.stringify(userMessage.blocks)).not.toContain("You said:");
+    expect(userMessage.blocks).toContainEqual(expect.objectContaining({
+      type: "paragraph",
+      content: expect.arrayContaining([expect.objectContaining({ text: "Keep the real user question." })]),
+    }));
+  });
+
+  it("filters the assistant sr-only label without dropping the real assistant content", () => {
+    const conversation = conversationFrom(new ChatGPTAdapter().parse(parseDocument(accessibilityLabelsFixture()), CHATGPT_LOCATION));
+    const assistantMessage = conversation.messages[1];
+
+    expect(assistantMessage.originalText).toBe("Keep the real assistant answer.");
+    expect(JSON.stringify(assistantMessage.blocks)).not.toContain("ChatGPT said:");
+    expect(assistantMessage.blocks).toContainEqual(expect.objectContaining({
+      type: "paragraph",
+      content: expect.arrayContaining([expect.objectContaining({ text: "Keep the real assistant answer." })]),
+    }));
+  });
+
+  it("keeps the message count while excluding accessibility labels from Markdown", () => {
+    const conversation = conversationFrom(new ChatGPTAdapter().parse(parseDocument(accessibilityLabelsFixture()), CHATGPT_LOCATION));
+    const result = exportConversationToMarkdown(conversation);
+
+    expect(conversation.messages).toHaveLength(2);
+    expect(conversation.metadata.messageCount).toBe(2);
+    expect(result.status).toBe("success");
+    if (result.status !== "success") throw new Error("Expected Markdown export success");
+    expect(result.markdown).toContain("Keep the real user question.");
+    expect(result.markdown).toContain("Keep the real assistant answer.");
+    expect(result.markdown).not.toContain("You said:");
+    expect(result.markdown).not.toContain("ChatGPT said:");
   });
 
   it("preserves DOM order across multiple turns", () => {

@@ -9,7 +9,7 @@ import {
   type ParseWarning,
 } from "../../types/conversation";
 import type { AdapterParseResult, PageLocation, PlatformAdapter } from "../types";
-import { parseChatGPTBlocks, type BlockParseContext } from "./chatgpt-block-parser";
+import { parseChatGPTBlocks, safeChatGPTMessageText, type BlockParseContext } from "./chatgpt-block-parser";
 import { CHATGPT_DOM } from "./chatgpt-selectors";
 import { safeTextContent, stableDomId } from "./dom-utils";
 
@@ -73,7 +73,7 @@ function sourceMessageId(messageNode: Element): string | null {
 }
 
 function createMessageId(messageNode: Element, order: number): string {
-  return stableDomId("chatgpt-message", sourceMessageId(messageNode) ?? `${order}:${safeTextContent(roleContainer(messageNode)).slice(0, 160)}`);
+  return stableDomId("chatgpt-message", sourceMessageId(messageNode) ?? `${order}:${safeChatGPTMessageText(roleContainer(messageNode)).slice(0, 160)}`);
 }
 
 function sourceAttributes(messageNode: Element): Record<string, string> | undefined {
@@ -122,7 +122,7 @@ function extractTitle(document: Document, location: PageLocation): string {
 }
 
 function fallbackMessage(messageNode: Element, id: string, role: MessageRole, order: number): Message {
-  const originalText = safeTextContent(roleContainer(messageNode));
+  const originalText = safeChatGPTMessageText(roleContainer(messageNode));
   return {
     id,
     role,
@@ -165,7 +165,7 @@ export class ChatGPTAdapter implements PlatformAdapter {
         const container = roleContainer(messageNode);
         try {
           const blocks = this.parseBlocks(container, { baseUrl: location.href, messageId: id, warnings });
-          const originalText = safeTextContent(container);
+          const originalText = safeChatGPTMessageText(container);
           if (blocks.length === 0) warnings.push({ code: "chatgpt-message-empty-blocks", message: "A message had no structured blocks and was preserved by the normalizer.", messageId: id });
           return {
             id,

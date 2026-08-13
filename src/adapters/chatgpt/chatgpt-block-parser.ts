@@ -26,6 +26,23 @@ export interface BlockParseContext {
 
 const TRANSPARENT_CONTAINERS = new Set(["article", "div", "main", "section"]);
 const INLINE_TAGS = new Set(["a", "b", "br", "code", "del", "em", "i", "mark", "s", "small", "span", "strike", "strong", "sub", "sup", "u"]);
+const CHATGPT_ASSISTIVE_UI_SELECTOR = ".sr-only";
+
+function isChatGPTAssistiveUi(element: Element): boolean {
+  return element.matches(CHATGPT_ASSISTIVE_UI_SELECTOR);
+}
+
+function cloneWithoutChatGPTAssistiveUi(element: Element): Element | null {
+  if (isChatGPTAssistiveUi(element)) return null;
+  const clone = element.cloneNode(true) as Element;
+  clone.querySelectorAll(CHATGPT_ASSISTIVE_UI_SELECTOR).forEach((node) => node.remove());
+  return clone;
+}
+
+export function safeChatGPTMessageText(element: Element): string {
+  const clone = cloneWithoutChatGPTAssistiveUi(element);
+  return clone ? safeTextContent(clone) : "";
+}
 
 class BlockFactory {
   private index = 0;
@@ -231,5 +248,6 @@ function parseContainer(container: Element, factory: BlockFactory, context: Bloc
 }
 
 export function parseChatGPTBlocks(container: Element, context: BlockParseContext): Block[] {
-  return parseContainer(container, new BlockFactory(context.messageId), context);
+  const sanitizedContainer = cloneWithoutChatGPTAssistiveUi(container);
+  return sanitizedContainer ? parseContainer(sanitizedContainer, new BlockFactory(context.messageId), context) : [];
 }
