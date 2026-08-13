@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { getPlatformLabel } from "../constants/platforms";
 import type { Conversation } from "../types/conversation";
+import { saveMarkdownFile } from "../exporters/markdown-download-service";
+import { exportMarkdownFromPopup, type PopupMarkdownExportResult } from "./markdown-export-action";
 import {
   MESSAGE_TYPE,
   type ConversationParsedMessage,
@@ -18,6 +20,7 @@ type PopupState =
 
 export function PopupApp() {
   const [state, setState] = useState<PopupState>({ kind: "loading" });
+  const [markdownExport, setMarkdownExport] = useState<"idle" | "exporting" | PopupMarkdownExportResult>("idle");
 
   useEffect(() => {
     void loadConversation();
@@ -76,6 +79,11 @@ export function PopupApp() {
     }
   }
 
+  async function handleMarkdownExport(conversation: Conversation) {
+    setMarkdownExport("exporting");
+    setMarkdownExport(await exportMarkdownFromPopup(conversation, saveMarkdownFile));
+  }
+
   function platformRow(status: PageStatus) {
     return (
       <div>
@@ -92,7 +100,7 @@ export function PopupApp() {
         <h1 className="mt-1 text-2xl font-semibold">ExportAI</h1>
       </header>
 
-      {state.kind === "loading" && <p className="mt-8 text-sm text-slate-600">Detecting the current platform…</p>}
+      {state.kind === "loading" && <p className="mt-8 text-sm text-slate-600">Detecting the current platform...</p>}
 
       {state.kind === "unsupported" && (
         <section className="mt-8 rounded-xl border border-slate-200 bg-white p-4">
@@ -106,7 +114,7 @@ export function PopupApp() {
         <section className="mt-7 rounded-xl border border-slate-200 bg-white p-4">
           <dl className="space-y-3 text-sm">
             {platformRow(state.status)}
-            <div><dt className="text-slate-500">Status</dt><dd className="mt-1 font-medium">Parsing conversation…</dd></div>
+            <div><dt className="text-slate-500">Status</dt><dd className="mt-1 font-medium">Parsing conversation...</dd></div>
           </dl>
         </section>
       )}
@@ -118,6 +126,20 @@ export function PopupApp() {
             <div><dt className="text-slate-500">Conversation title</dt><dd className="mt-1 font-medium">{state.conversation.title}</dd></div>
             <div><dt className="text-slate-500">Message count</dt><dd className="mt-1 font-medium">{state.conversation.metadata.messageCount}</dd></div>
           </dl>
+          <button
+            className="mt-4 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-slate-400"
+            disabled={markdownExport === "exporting"}
+            onClick={() => void handleMarkdownExport(state.conversation)}
+            type="button"
+          >
+            {markdownExport === "exporting" ? "Exporting Markdown..." : "Export Markdown"}
+          </button>
+          {typeof markdownExport === "object" && markdownExport.status === "success" && (
+            <p className="mt-3 text-sm text-emerald-700" role="status">Markdown download started: {markdownExport.filename}</p>
+          )}
+          {typeof markdownExport === "object" && markdownExport.status === "error" && (
+            <p className="mt-3 text-sm text-rose-700" role="alert">{markdownExport.reason}</p>
+          )}
         </section>
       )}
 
