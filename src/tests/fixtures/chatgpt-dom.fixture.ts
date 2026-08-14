@@ -54,6 +54,57 @@ export function assistantImageOnlyWithActionsFixture(): string {
   `, { title: "Image-only assistant" });
 }
 
+function generatedImageWithPagination(realText = ""): string {
+  return `
+    ${realText ? `<p>${realText}</p>` : ""}
+    <div class="generated-image-result">
+      <div class="image-container">
+        <button aria-label="Open image">
+          <img src="https://images.example.test/generated-landscape.png" alt="Generated landscape">
+        </button>
+      </div>
+      <div class="response-navigation" data-testid="response-navigation">
+        <button aria-label="Previous response">Previous response</button>
+        <span aria-live="polite">2/2</span>
+        <button aria-label="Next response">Next response</button>
+      </div>
+    </div>
+  `;
+}
+
+export function assistantImageOnlyWithPaginationFixture(): string {
+  return shell(`
+    <article data-testid="conversation-turn-0" data-message-author-role="user" data-message-id="pagination-user">
+      <p>Create a landscape image.</p>
+    </article>
+    <article data-testid="conversation-turn-1" data-message-author-role="assistant" data-message-id="pagination-assistant">
+      ${generatedImageWithPagination()}
+    </article>
+  `, { title: "Image pagination" });
+}
+
+export function assistantImageTextWithPaginationFixture(): string {
+  return shell(`
+    <article data-testid="conversation-turn-0" data-message-author-role="user" data-message-id="pagination-text-user">
+      <p>Update the image.</p>
+    </article>
+    <article data-testid="conversation-turn-1" data-message-author-role="assistant" data-message-id="pagination-text-assistant">
+      ${generatedImageWithPagination("Here is the updated image.")}
+    </article>
+  `, { title: "Image text pagination" });
+}
+
+export function legitimatePaginationTextFixture(): string {
+  return shell(`
+    <article data-testid="conversation-turn-0" data-message-author-role="user" data-message-id="score-user">
+      <p>What is the score?</p>
+    </article>
+    <article data-testid="conversation-turn-1" data-message-author-role="assistant" data-message-id="score-assistant">
+      <p>The score is 2/2.</p>
+    </article>
+  `, { title: "Legitimate fraction text" });
+}
+
 export function multiTurnFixture(): string {
   return shell(`
     <article data-message-author-role="user" data-message-id="u1"><p>One</p></article>
@@ -101,6 +152,64 @@ export function richContentFixture(): string {
       </div>
     </article>
   `, { title: "Rich content" });
+}
+
+export function structuredCompatibilityFixture(): string {
+  return shell(`
+    <article data-message-author-role="user" data-message-id="structured-user"><p>Show structured compatibility.</p></article>
+    <article data-message-author-role="assistant" data-message-id="structured-assistant">
+      <div>
+        <pre>
+          <div class="code-toolbar"><span>TypeScript</span><button aria-label="Copy code">Copy</button></div>
+          <div class="cm-content" role="textbox" aria-label="Edit code" aria-readonly="true" data-language="typescript"><div class="cm-line"><span>const message = </span><span>"ExportAI"</span><span>;</span></div><div class="cm-line"><span>console.log(message);</span></div></div>
+        </pre>
+        <pre>
+          <div class="code-toolbar"><span>JavaScript</span><button aria-label="Copy code">Copy</button></div>
+          <div class="cm-content" role="textbox" aria-label="Edit code" aria-readonly="true" data-language="javascript"><div class="cm-line"><span>const mixed = </span><span>"content"</span><span>;</span></div><div class="cm-line">console.log(mixed);</div></div>
+        </pre>
+        <pre><div class="cm-content" role="textbox" aria-label="Edit code" aria-readonly="true" data-language="text"><div class="cm-line">\`\`\`text</div><div class="cm-line">literal fence</div><div class="cm-line">\`\`\`</div></div></pre>
+        <p>Einstein wrote <span role="math" data-math-source="E = mc^2" aria-label="E = mc^2" data-client-katex-layout=""><span class="katex">E=mc2</span></span>.</p>
+        <span role="math" data-math-source="x^2 + y^2 = z^2" aria-label="x^2 + y^2 = z^2" style="display: block;"><span class="katex-display"><span class="katex">x2+y2=z2</span></span></span>
+        <p>Mixed before <span role="math" data-math-source="a^2 + b^2 = c^2" aria-label="a^2 + b^2 = c^2"><span class="katex">a2+b2=c2</span></span> mixed after.</p>
+        <ul>
+          <li>
+            <p>Apple</p>
+          </li>
+          <li>
+            <p>Banana</p>
+          </li>
+          <li>
+            <p>Orange</p>
+          </li>
+          <li>
+            <p>Parent A</p>
+            <ul>
+              <li>
+                <p>Child A1</p>
+              </li>
+              <li>
+                <p>Child A2</p>
+              </li>
+            </ul>
+          </li>
+          <li>
+            <p>Line 1<br>Line 2</p>
+          </li>
+        </ul>
+        <ol>
+          <li>
+            <p>First</p>
+          </li>
+          <li>
+            <p>Second</p>
+          </li>
+          <li>
+            <p>Third</p>
+          </li>
+        </ol>
+      </div>
+    </article>
+  `, { title: "Structured compatibility" });
 }
 
 export function unknownNodeFixture(): string {

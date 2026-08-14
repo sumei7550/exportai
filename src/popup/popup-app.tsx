@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { getPlatformLabel } from "../constants/platforms";
 import type { Conversation } from "../types/conversation";
+import { saveJsonFile } from "../exporters/json-download-service";
 import { saveMarkdownFile } from "../exporters/markdown-download-service";
+import { exportJsonFromPopup, type PopupJsonExportResult } from "./json-export-action";
 import { exportMarkdownFromPopup, type PopupMarkdownExportResult } from "./markdown-export-action";
 import {
   MESSAGE_TYPE,
@@ -21,6 +23,7 @@ type PopupState =
 export function PopupApp() {
   const [state, setState] = useState<PopupState>({ kind: "loading" });
   const [markdownExport, setMarkdownExport] = useState<"idle" | "exporting" | PopupMarkdownExportResult>("idle");
+  const [jsonExport, setJsonExport] = useState<"idle" | "exporting" | PopupJsonExportResult>("idle");
 
   useEffect(() => {
     void loadConversation();
@@ -84,6 +87,11 @@ export function PopupApp() {
     setMarkdownExport(await exportMarkdownFromPopup(conversation, saveMarkdownFile));
   }
 
+  async function handleJsonExport(conversation: Conversation) {
+    setJsonExport("exporting");
+    setJsonExport(await exportJsonFromPopup(conversation, saveJsonFile));
+  }
+
   function platformRow(status: PageStatus) {
     return (
       <div>
@@ -134,11 +142,25 @@ export function PopupApp() {
           >
             {markdownExport === "exporting" ? "Exporting Markdown..." : "Export Markdown"}
           </button>
+          <button
+            className="ml-2 mt-4 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-slate-400"
+            disabled={jsonExport === "exporting"}
+            onClick={() => void handleJsonExport(state.conversation)}
+            type="button"
+          >
+            {jsonExport === "exporting" ? "Exporting JSON..." : "Export JSON"}
+          </button>
           {typeof markdownExport === "object" && markdownExport.status === "success" && (
             <p className="mt-3 text-sm text-emerald-700" role="status">Markdown download started: {markdownExport.filename}</p>
           )}
           {typeof markdownExport === "object" && markdownExport.status === "error" && (
             <p className="mt-3 text-sm text-rose-700" role="alert">{markdownExport.reason}</p>
+          )}
+          {typeof jsonExport === "object" && jsonExport.status === "success" && (
+            <p className="mt-3 text-sm text-emerald-700" role="status">JSON download started: {jsonExport.filename}</p>
+          )}
+          {typeof jsonExport === "object" && jsonExport.status === "error" && (
+            <p className="mt-3 text-sm text-rose-700" role="alert">{jsonExport.reason}</p>
           )}
         </section>
       )}

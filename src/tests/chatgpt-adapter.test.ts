@@ -4,18 +4,23 @@ import { describe, expect, it } from "vitest";
 import { ChatGPTAdapter } from "../adapters/chatgpt/chatgpt-adapter";
 import { parseChatGPTBlocks } from "../adapters/chatgpt/chatgpt-block-parser";
 import type { AdapterParseResult } from "../adapters/types";
+import { exportConversationToJson } from "../exporters/json-exporter";
 import { exportConversationToMarkdown } from "../exporters/markdown-exporter";
 import type { Block, Conversation } from "../types/conversation";
 import {
   CHATGPT_LOCATION,
   accessibilityLabelsFixture,
   assistantImageOnlyWithActionsFixture,
+  assistantImageOnlyWithPaginationFixture,
+  assistantImageTextWithPaginationFixture,
   emptyConversationFixture,
+  legitimatePaginationTextFixture,
   missingTitleFixture,
   multiTurnFixture,
   nineTurnConversationFixture,
   richContentFixture,
   singleTurnFixture,
+  structuredCompatibilityFixture,
   unknownNodeFixture,
 } from "./fixtures/chatgpt-dom.fixture";
 
@@ -31,6 +36,14 @@ function conversationFrom(result: AdapterParseResult): Conversation {
 
 function richBlocks(): Block[] {
   return conversationFrom(new ChatGPTAdapter().parse(parseDocument(richContentFixture()), CHATGPT_LOCATION)).messages[1].blocks;
+}
+
+function structuredConversation(): Conversation {
+  return conversationFrom(new ChatGPTAdapter().parse(parseDocument(structuredCompatibilityFixture()), CHATGPT_LOCATION));
+}
+
+function structuredBlocks(): Block[] {
+  return structuredConversation().messages[1].blocks;
 }
 
 describe("ChatGPTAdapter page and conversation detection", () => {
@@ -151,6 +164,63 @@ describe("ChatGPTAdapter messages", () => {
     expect(result.markdown).not.toContain("Dislike");
   });
 
+  it("removes image response pagination UI while preserving an image-only assistant", () => {
+    const conversation = conversationFrom(new ChatGPTAdapter().parse(parseDocument(assistantImageOnlyWithPaginationFixture()), CHATGPT_LOCATION));
+    const assistantMessage = conversation.messages[1];
+
+    expect(assistantMessage.blocks).toHaveLength(1);
+    expect(assistantMessage.blocks[0]).toMatchObject({
+      type: "image",
+      src: "https://images.example.test/generated-landscape.png",
+      alt: "Generated landscape",
+    });
+    expect(assistantMessage.originalText).toBe("");
+    expect(assistantMessage.metadata.isPartial).not.toBe(true);
+    expect(conversation.metadata.parseWarnings.map((warning) => warning.code)).not.toContain("chatgpt-message-empty-blocks");
+  });
+
+  it("keeps real image response text while removing its pagination UI", () => {
+    const conversation = conversationFrom(new ChatGPTAdapter().parse(parseDocument(assistantImageTextWithPaginationFixture()), CHATGPT_LOCATION));
+    const assistantMessage = conversation.messages[1];
+    const serializedMessage = JSON.stringify(assistantMessage);
+
+    expect(assistantMessage.originalText).toBe("Here is the updated image.");
+    expect(assistantMessage.blocks).toContainEqual(expect.objectContaining({ type: "image" }));
+    expect(serializedMessage).toContain("Here is the updated image.");
+    expect(serializedMessage).not.toContain("Previous response");
+    expect(serializedMessage).not.toContain("Next response");
+    expect(serializedMessage).not.toContain("2/2");
+  });
+
+  it("preserves ordinary assistant text containing 2/2", () => {
+    const conversation = conversationFrom(new ChatGPTAdapter().parse(parseDocument(legitimatePaginationTextFixture()), CHATGPT_LOCATION));
+    const assistantMessage = conversation.messages[1];
+
+    expect(assistantMessage.originalText).toBe("The score is 2/2.");
+    expect(JSON.stringify(assistantMessage.blocks)).toContain("The score is 2/2.");
+  });
+
+  it("keeps Markdown and JSON free of image pagination artifacts", () => {
+    const conversation = conversationFrom(new ChatGPTAdapter().parse(parseDocument(assistantImageOnlyWithPaginationFixture()), CHATGPT_LOCATION));
+    const markdownResult = exportConversationToMarkdown(conversation);
+    const jsonResult = exportConversationToJson(conversation);
+
+    expect(markdownResult.status).toBe("success");
+    if (markdownResult.status === "error") throw new Error(markdownResult.code);
+    expect(markdownResult.markdown).toContain("![Generated landscape](<https://images.example.test/generated-landscape.png>)");
+    expect(markdownResult.markdown).not.toContain("2/2");
+
+    expect(jsonResult.status).toBe("success");
+    if (jsonResult.status === "error") throw new Error(jsonResult.code);
+    const jsonDocument = JSON.parse(jsonResult.json) as { messages: Array<{ originalText: string; blocks: Block[]; metadata: { isPartial: boolean } }> };
+    const assistantMessage = jsonDocument.messages[1];
+    expect(assistantMessage.originalText).toBe("");
+    expect(assistantMessage.blocks).toHaveLength(1);
+    expect(assistantMessage.blocks[0]).toMatchObject({ type: "image" });
+    expect(assistantMessage.metadata.isPartial).toBe(false);
+    expect(jsonResult.json).not.toContain("2/2");
+  });
+
   it("preserves DOM order across multiple turns", () => {
     const conversation = conversationFrom(new ChatGPTAdapter().parse(parseDocument(multiTurnFixture()), CHATGPT_LOCATION));
     expect(conversation.messages.map((message) => message.role)).toEqual(["user", "assistant", "user", "assistant"]);
@@ -245,5 +315,85 @@ describe("ChatGPTAdapter structured blocks", () => {
     const conversation = conversationFrom(new ChatGPTAdapter().parse(parseDocument(unknownNodeFixture()), CHATGPT_LOCATION));
     expect(conversation.messages[1].blocks).toContainEqual(expect.objectContaining({ type: "unknown", rawText: "Readable fallback", sourceTag: "exportai-unknown" }));
     expect(conversation.metadata.parseWarnings.map((warning) => warning.code)).toContain("chatgpt-unknown-block");
+  });
+
+  it("extracts real ChatGPT math source once and detects display math", () => {
+    const blocks = structuredBlocks();
+    const math = blocks.filter((block) => block.type === "math");
+
+    expect(math).toEqual([
+      expect.objectContaining({ latex: "E = mc^2", display: false }),
+      expect.objectContaining({ latex: "x^2 + y^2 = z^2", display: true }),
+      expect.objectContaining({ latex: "a^2 + b^2 = c^2", display: false }),
+    ]);
+    expect(blocks.map((block) => block.type).slice(3, 8)).toEqual(["paragraph", "math", "paragraph", "math", "paragraph"]);
+  });
+
+  it("preserves CodeMirror line boundaries and extracts normalized languages", () => {
+    const code = structuredBlocks().filter((block) => block.type === "code");
+
+    expect(code).toEqual([
+      expect.objectContaining({ language: "typescript", code: 'const message = "ExportAI";\nconsole.log(message);' }),
+      expect.objectContaining({ language: "javascript", code: 'const mixed = "content";\nconsole.log(mixed);' }),
+      expect.objectContaining({ language: "text", code: "```text\nliteral fence\n```" }),
+    ]);
+    expect(JSON.stringify(code)).not.toContain("Copy");
+  });
+
+  it("trims only list item boundary whitespace and preserves nested and internal newlines", () => {
+    const lists = structuredBlocks().filter((block) => block.type === "list");
+    expect(lists).toHaveLength(2);
+    const unordered = lists[0];
+    const ordered = lists[1];
+    if (unordered?.type !== "list" || ordered?.type !== "list") throw new Error("Expected lists");
+
+    expect(unordered.items.map((item) => item.content.map((part) => part.text).join(""))).toEqual([
+      "Apple",
+      "Banana",
+      "Orange",
+      "Parent A",
+      "Line 1\nLine 2",
+    ]);
+    expect(unordered.items[3].children?.items.map((item) => item.content.map((part) => part.text).join(""))).toEqual(["Child A1", "Child A2"]);
+    expect(ordered.ordered).toBe(true);
+    expect(ordered.items.map((item) => item.content.map((part) => part.text).join(""))).toEqual(["First", "Second", "Third"]);
+  });
+
+  it("exports corrected structured content through Markdown without exporter changes", () => {
+    const result = exportConversationToMarkdown(structuredConversation());
+    expect(result.status).toBe("success");
+    if (result.status === "error") throw new Error(result.code);
+
+    expect(result.markdown).toContain('```typescript\nconst message = "ExportAI";\nconsole.log(message);\n```');
+    expect(result.markdown).toContain('```javascript\nconst mixed = "content";\nconsole.log(mixed);\n```');
+    expect(result.markdown).toContain("$E = mc^2$");
+    expect(result.markdown).toContain("$$\nx^2 + y^2 = z^2\n$$");
+    expect(result.markdown).toContain("$a^2 + b^2 = c^2$");
+    expect(result.markdown).toContain("- Apple\n- Banana\n- Orange\n- Parent A\n  - Child A1\n  - Child A2");
+    expect(result.markdown).toContain("1. First\n2. Second\n3. Third");
+    expect(result.markdown).not.toContain("TypeScriptconst message");
+  });
+
+  it("exports corrected structured blocks through JSON without exporter changes", () => {
+    const result = exportConversationToJson(structuredConversation());
+    expect(result.status).toBe("success");
+    if (result.status === "error") throw new Error(result.code);
+    const document = JSON.parse(result.json) as { messages: Array<{ blocks: Block[] }> };
+    const blocks = document.messages[1].blocks;
+
+    expect(blocks.filter((block) => block.type === "math")).toHaveLength(3);
+    expect(blocks).toContainEqual(expect.objectContaining({
+      type: "code",
+      language: "typescript",
+      code: 'const message = "ExportAI";\nconsole.log(message);',
+    }));
+    expect(blocks).toContainEqual(expect.objectContaining({
+      type: "code",
+      language: "javascript",
+      code: 'const mixed = "content";\nconsole.log(mixed);',
+    }));
+    expect(result.json).toContain('"text": "Apple"');
+    expect(result.json).not.toContain('"text": "\\nApple\\n"');
+    expect(result.json).not.toContain("TypeScriptconst message");
   });
 });

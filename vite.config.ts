@@ -39,6 +39,10 @@ export default defineConfig(({ mode }) => {
         input: {
           popup: resolve(__dirname, "popup.html"),
           background: resolve(__dirname, "src/background/service-worker.ts"),
+          "pdf-feasibility": resolve(__dirname, "pdf-feasibility.html"),
+          "pdf-isolation": resolve(__dirname, "pdf-isolation.html"),
+          "pdf-engine-diagnostic": resolve(__dirname, "pdf-engine-diagnostic.html"),
+          "pdf-jspdf-feasibility": resolve(__dirname, "pdf-jspdf-feasibility.html"),
         },
         output: {
           entryFileNames: "assets/[name].js",

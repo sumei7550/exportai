@@ -69,9 +69,25 @@ function preserveContentImagesFromButtons(container: Element): void {
   });
 }
 
+function removeResponseNavigationUi(container: Element): void {
+  const previousControls = [...container.querySelectorAll(CHATGPT_DOM.responseNavigationPrevious)];
+  for (const previousControl of previousControls) {
+    if (!container.contains(previousControl)) continue;
+    let candidate = previousControl.parentElement;
+    while (candidate && candidate !== container) {
+      if (candidate.querySelector(CHATGPT_DOM.responseNavigationNext)) {
+        candidate.remove();
+        break;
+      }
+      candidate = candidate.parentElement;
+    }
+  }
+}
+
 function cloneWithoutChatGPTUi(element: Element): Element | null {
   if (element.matches(CHATGPT_UI_SELECTOR) || hasActionAriaLabel(element)) return null;
   const clone = element.cloneNode(true) as Element;
+  removeResponseNavigationUi(clone);
   preserveContentImagesFromButtons(clone);
   clone.querySelectorAll(CHATGPT_UI_SELECTOR).forEach((node) => node.remove());
   clone.querySelectorAll("[aria-label]").forEach((node) => {
@@ -116,6 +132,7 @@ function extractLatex(element: Element): string {
 
 function isDisplayMath(element: Element): boolean {
   return element.classList.contains("katex-display")
+    || element.querySelector(".katex-display") !== null
     || element.getAttribute("data-display") === "true"
     || element.closest("[data-display='true']") !== null;
 }
@@ -125,9 +142,19 @@ function parseMath(element: Element, factory: BlockFactory): Block | null {
   return latex ? { id: factory.id("math"), type: "math", latex, display: isDisplayMath(element) } : null;
 }
 
+function codeText(codeElement: Element): string {
+  const lines = [...codeElement.querySelectorAll(CHATGPT_DOM.codeLines)];
+  const text = lines.length > 0
+    ? lines.map((line) => line.textContent ?? "").join("\n")
+    : codeElement.textContent ?? "";
+  return text.replace(/^\n|\n$/g, "");
+}
+
 function parseCode(element: Element, factory: BlockFactory): Block {
-  const codeElement = element.tagName.toLowerCase() === "code" ? element : element.querySelector("code");
-  const code = (codeElement?.textContent ?? element.textContent ?? "").replace(/^\n|\n$/g, "");
+  const codeElement = element.tagName.toLowerCase() === "code"
+    ? element
+    : element.querySelector(CHATGPT_DOM.codeContent) ?? element;
+  const code = codeText(codeElement);
   let language: string | undefined;
   for (const attribute of CHATGPT_DOM.codeLanguageAttributes) {
     language = codeElement?.getAttribute(attribute) ?? element.getAttribute(attribute) ?? undefined;
@@ -137,7 +164,23 @@ function parseCode(element: Element, factory: BlockFactory): Block {
     const languageClass = [...codeElement.classList].find((name) => name.startsWith("language-"));
     language = languageClass?.slice("language-".length);
   }
-  return { id: factory.id("code"), type: "code", code, language: language?.trim() || undefined };
+  return { id: factory.id("code"), type: "code", code, language: language?.trim().toLowerCase() || undefined };
+}
+
+function trimListItemBoundaries(content: InlineContent[]): InlineContent[] {
+  const trimmed = content.map((item) => ({ ...item }));
+  while (trimmed.length > 0) {
+    trimmed[0].text = trimmed[0].text.replace(/^\s+/, "");
+    if (trimmed[0].text) break;
+    trimmed.shift();
+  }
+  while (trimmed.length > 0) {
+    const last = trimmed.length - 1;
+    trimmed[last].text = trimmed[last].text.replace(/\s+$/, "");
+    if (trimmed[last].text) break;
+    trimmed.pop();
+  }
+  return trimmed;
 }
 
 function directListItems(element: Element): Element[] {
@@ -151,7 +194,7 @@ function parseList(element: Element, factory: BlockFactory, context: BlockParseC
     const nested = [...listItem.children].find((child) => ["ul", "ol"].includes(child.tagName.toLowerCase()));
     return {
       id: stableDomId("list-item", `${context.messageId}:${factory.id("item")}:${index}`),
-      content: parseInlineContent(inlineContainer, context.baseUrl),
+      content: trimListItemBoundaries(parseInlineContent(inlineContainer, context.baseUrl)),
       children: nested ? parseList(nested, factory, context) : undefined,
     };
   });

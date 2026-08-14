@@ -24,6 +24,7 @@ export const CHATGPT_DOM = {
   math: [
     'annotation[encoding="application/x-tex"]',
     "math",
+    "[data-math-source]",
     "[data-latex]",
     "[data-math]",
     ".katex",
@@ -31,8 +32,12 @@ export const CHATGPT_DOM = {
     ".math",
   ].join(","),
   latexAnnotation: 'annotation[encoding="application/x-tex"]',
-  latexAttributes: ["data-latex", "data-math"],
+  latexAttributes: ["data-math-source", "data-latex", "data-math"],
   codeLanguageAttributes: ["data-language", "data-lang"],
+  codeContent: 'code, [role="textbox"][data-language], .cm-content[data-language]',
+  codeLines: ":scope > .cm-line",
+  responseNavigationPrevious: '[aria-label="Previous response" i]',
+  responseNavigationNext: '[aria-label="Next response" i]',
 } as const;
 
 export const CHATGPT_SUPPORTED_HOSTNAMES = ["chatgpt.com", "chat.openai.com"] as const;
