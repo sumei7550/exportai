@@ -29,11 +29,44 @@ describe("Markdown Exporter Core", () => {
     });
   });
 
-  it("preserves an empty message as readable fallback content", () => {
+  it("preserves an empty user message as readable fallback content", () => {
     const conversation = createConversationFixture();
     conversation.messages = [{ ...conversation.messages[0], originalText: "", blocks: [] }];
 
     expect(renderConversationMarkdown(conversation)).toContain("## User\n\n_No readable content._");
+  });
+
+  it("preserves an empty assistant message as readable fallback content", () => {
+    const conversation = createConversationFixture();
+    conversation.messages = [{ ...conversation.messages[1], originalText: "", blocks: [] }];
+
+    expect(renderConversationMarkdown(conversation)).toContain("## Assistant\n\n_No readable content._");
+  });
+
+  it("keeps empty messages in order among readable messages", () => {
+    const conversation = createConversationFixture();
+    conversation.messages = [
+      { ...conversation.messages[0], originalText: "First readable message.", blocks: [] },
+      { ...conversation.messages[1], originalText: "", blocks: [] },
+      { ...conversation.messages[2], originalText: "Last readable message.", blocks: [] },
+    ];
+
+    expect(renderConversationMarkdown(conversation)).toContain(
+      "## User\n\nFirst readable message.\n\n## Assistant\n\n_No readable content._\n\n## Assistant\n\nLast readable message.",
+    );
+  });
+
+  it("does not treat an image-only message as empty", () => {
+    const conversation = createConversationFixture();
+    conversation.messages = [{
+      ...conversation.messages[1],
+      originalText: "",
+      blocks: [{ id: "image-only", type: "image", src: "https://example.test/image.png", alt: "Diagram" }],
+    }];
+
+    const markdown = renderConversationMarkdown(conversation);
+    expect(markdown).toContain("## Assistant\n\n![Diagram](<https://example.test/image.png>)");
+    expect(markdown).not.toContain("_No readable content._");
   });
 
   it("marks partial messages without dropping their content", () => {
@@ -94,6 +127,26 @@ describe("Markdown Block Renderer", () => {
     expect(renderBlockMarkdown({ id: "image", type: "image", src: "https://example.test/image.png", alt: "Chart", caption: "A chart" }).markdown).toBe("![Chart](<https://example.test/image.png> \"A chart\")");
     expect(renderBlockMarkdown({ id: "link", type: "link", href: "https://example.test/reference", content: [{ text: "Reference" }] }).markdown).toBe("[Reference](<https://example.test/reference>)");
     expect(renderBlockMarkdown({ id: "unsafe", type: "link", href: "javascript:alert(1)", content: [{ text: "Unsafe" }] })).toEqual({ markdown: "Unsafe", warnings: [{ code: "UNSAFE_URL_FALLBACK", blockId: "unsafe" }] });
+  });
+
+  it("preserves a descriptive image alt", () => {
+    expect(renderBlockMarkdown({ id: "image", type: "image", src: "https://example.test/image.png", alt: "Architecture diagram" }).markdown)
+      .toBe("![Architecture diagram](<https://example.test/image.png>)");
+  });
+
+  it("replaces a UUID image filename alt", () => {
+    expect(renderBlockMarkdown({ id: "image", type: "image", src: "https://example.test/image.png", alt: "a048683c-f186-4826-a447-867fa46f572f.png" }).markdown)
+      .toBe("![Image](<https://example.test/image.png>)");
+  });
+
+  it("uses a fallback for an empty image alt", () => {
+    expect(renderBlockMarkdown({ id: "image", type: "image", src: "https://example.test/image.png", alt: "  " }).markdown)
+      .toBe("![Image](<https://example.test/image.png>)");
+  });
+
+  it("preserves a normal image filename alt", () => {
+    expect(renderBlockMarkdown({ id: "image", type: "image", src: "https://example.test/image.png", alt: "quarterly-report.png" }).markdown)
+      .toBe("![quarterly\\-report.png](<https://example.test/image.png>)");
   });
 
   it("renders quotes and thematic breaks", () => {

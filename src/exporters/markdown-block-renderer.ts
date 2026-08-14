@@ -1,6 +1,10 @@
 import type { Block, InlineContent, ListBlock } from "../types/conversation";
 import { escapeMarkdownText, getSafeMarkdownUrl, renderInlineContent } from "./markdown-inline-renderer";
 
+const DEFAULT_IMAGE_ALT = "Image";
+const UUID_FILENAME_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.[a-z0-9]+$/i;
+const HEX_ID_FILENAME_PATTERN = /^[0-9a-f]{24,}\.[a-z0-9]+$/i;
+
 export interface MarkdownRenderWarning {
   code: "UNSAFE_URL_FALLBACK" | "UNKNOWN_BLOCK_FALLBACK" | "UNKNOWN_BLOCK_EMPTY";
   blockId: string;
@@ -100,13 +104,23 @@ function renderTableCell(content: InlineContent[]): string {
 }
 
 function renderImage(blockId: string, src: string, alt: string, caption?: string): MarkdownBlockRenderResult {
+  const cleanAlt = normalizeImageAlt(alt);
   const safeUrl = getSafeMarkdownUrl(src);
   if (!safeUrl) {
-    return { markdown: escapeMarkdownText(alt || "Image unavailable"), warnings: [{ code: "UNSAFE_URL_FALLBACK", blockId }] };
+    return { markdown: escapeMarkdownText(cleanAlt), warnings: [{ code: "UNSAFE_URL_FALLBACK", blockId }] };
   }
 
   const title = caption?.trim() ? ` "${caption.replace(/"/g, "\\\"")}"` : "";
-  return success(`![${escapeMarkdownText(alt)}](<${safeUrl}>${title})`);
+  return success(`![${escapeMarkdownText(cleanAlt)}](<${safeUrl}>${title})`);
+}
+
+function normalizeImageAlt(alt: string): string {
+  const trimmedAlt = alt.trim();
+  if (!trimmedAlt || UUID_FILENAME_PATTERN.test(trimmedAlt) || HEX_ID_FILENAME_PATTERN.test(trimmedAlt)) {
+    return DEFAULT_IMAGE_ALT;
+  }
+
+  return alt;
 }
 
 function renderLink(blockId: string, href: string, content: InlineContent[]): MarkdownBlockRenderResult {

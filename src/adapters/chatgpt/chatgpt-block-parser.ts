@@ -24,23 +24,64 @@ export interface BlockParseContext {
   warnings: ParseWarning[];
 }
 
-const TRANSPARENT_CONTAINERS = new Set(["article", "div", "main", "section"]);
+const TRANSPARENT_CONTAINERS = new Set(["article", "div", "figure", "main", "picture", "section"]);
 const INLINE_TAGS = new Set(["a", "b", "br", "code", "del", "em", "i", "mark", "s", "small", "span", "strike", "strong", "sub", "sup", "u"]);
-const CHATGPT_ASSISTIVE_UI_SELECTOR = ".sr-only";
+const CHATGPT_ACTION_REGION_SELECTOR = [
+  '[role="toolbar"]',
+  '[data-testid*="action"]',
+  '[data-testid*="feedback"]',
+].join(",");
+const CHATGPT_UI_SELECTOR = [
+  ".sr-only",
+  CHATGPT_DOM.excludedContent,
+  CHATGPT_ACTION_REGION_SELECTOR,
+].join(",");
+const CHATGPT_ACTION_ARIA_LABELS = new Set([
+  "bad response",
+  "copy",
+  "copy response",
+  "dislike",
+  "edit",
+  "edit message",
+  "good response",
+  "like",
+  "message actions",
+]);
 
-function isChatGPTAssistiveUi(element: Element): boolean {
-  return element.matches(CHATGPT_ASSISTIVE_UI_SELECTOR);
+function hasActionAriaLabel(element: Element): boolean {
+  const label = element.getAttribute("aria-label")?.trim().toLowerCase();
+  return label ? CHATGPT_ACTION_ARIA_LABELS.has(label) : false;
 }
 
-function cloneWithoutChatGPTAssistiveUi(element: Element): Element | null {
-  if (isChatGPTAssistiveUi(element)) return null;
+function isWithinChatGPTActionRegion(element: Element): boolean {
+  let ancestor = element.parentElement;
+  while (ancestor) {
+    if (ancestor.matches(CHATGPT_ACTION_REGION_SELECTOR) || hasActionAriaLabel(ancestor)) return true;
+    ancestor = ancestor.parentElement;
+  }
+  return false;
+}
+
+function preserveContentImagesFromButtons(container: Element): void {
+  container.querySelectorAll("button").forEach((button) => {
+    if (hasActionAriaLabel(button) || isWithinChatGPTActionRegion(button)) return;
+    button.querySelectorAll("img").forEach((image) => button.before(image.cloneNode(true)));
+  });
+}
+
+function cloneWithoutChatGPTUi(element: Element): Element | null {
+  if (element.matches(CHATGPT_UI_SELECTOR) || hasActionAriaLabel(element)) return null;
   const clone = element.cloneNode(true) as Element;
-  clone.querySelectorAll(CHATGPT_ASSISTIVE_UI_SELECTOR).forEach((node) => node.remove());
+  preserveContentImagesFromButtons(clone);
+  clone.querySelectorAll(CHATGPT_UI_SELECTOR).forEach((node) => node.remove());
+  clone.querySelectorAll("[aria-label]").forEach((node) => {
+    if (hasActionAriaLabel(node)) node.remove();
+  });
   return clone;
 }
 
 export function safeChatGPTMessageText(element: Element): string {
-  const clone = cloneWithoutChatGPTAssistiveUi(element);
+  const clone = cloneWithoutChatGPTUi(element);
   return clone ? safeTextContent(clone) : "";
 }
 
@@ -129,14 +170,9 @@ function parseTable(element: Element, factory: BlockFactory, context: BlockParse
   return { id: factory.id("table"), type: "table", headers, rows };
 }
 
-function hasSemanticBlockChild(element: Element): boolean {
-  return [...element.children].some((child) => {
-    const tag = child.tagName.toLowerCase();
-    return ["blockquote", "hr", "ol", "p", "pre", "table", "ul"].includes(tag)
-      || /^h[1-6]$/.test(tag)
-      || isMathElement(child)
-      || child.tagName.toLowerCase() === "img";
-  });
+function hasSemanticBlockDescendant(element: Element): boolean {
+  return element.querySelector("blockquote, hr, img, ol, p, pre, table, ul, h1, h2, h3, h4, h5, h6") !== null
+    || element.querySelector(CHATGPT_DOM.math) !== null;
 }
 
 function parseParagraphWithMath(element: Element, factory: BlockFactory, context: BlockParseContext): Block[] {
@@ -213,7 +249,7 @@ function parseElement(element: Element, factory: BlockFactory, context: BlockPar
     return [];
   }
   if (TRANSPARENT_CONTAINERS.has(tag)) {
-    if (hasSemanticBlockChild(element)) return parseContainer(element, factory, context);
+    if (hasSemanticBlockDescendant(element)) return parseContainer(element, factory, context);
     const content = parseInlineContent(element, context.baseUrl);
     return readableInline(content) ? [{ id: factory.id("paragraph"), type: "paragraph", content }] : [];
   }
@@ -248,6 +284,6 @@ function parseContainer(container: Element, factory: BlockFactory, context: Bloc
 }
 
 export function parseChatGPTBlocks(container: Element, context: BlockParseContext): Block[] {
-  const sanitizedContainer = cloneWithoutChatGPTAssistiveUi(container);
+  const sanitizedContainer = cloneWithoutChatGPTUi(container);
   return sanitizedContainer ? parseContainer(sanitizedContainer, new BlockFactory(context.messageId), context) : [];
 }

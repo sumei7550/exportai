@@ -31,6 +31,29 @@ export function accessibilityLabelsFixture(): string {
   `, { title: "Accessibility labels" });
 }
 
+export function assistantImageOnlyWithActionsFixture(): string {
+  return shell(`
+    <article data-testid="conversation-turn-0" data-message-author-role="user" data-message-id="image-user">
+      <p>Create a landscape image.</p>
+    </article>
+    <article data-testid="conversation-turn-1" data-message-author-role="assistant" data-message-id="image-assistant">
+      <div class="generated-image-result">
+        <div class="image-container">
+          <button aria-label="Open image">
+            <img src="https://images.example.test/generated-landscape.png" alt="Generated landscape">
+          </button>
+        </div>
+      </div>
+      <div role="toolbar" aria-label="Message actions" data-testid="conversation-turn-actions">
+        <button aria-label="Edit message">Edit</button>
+        <button aria-label="Copy response">Copy response</button>
+        <button aria-label="Good response">Like</button>
+        <button aria-label="Bad response">Dislike</button>
+      </div>
+    </article>
+  `, { title: "Image-only assistant" });
+}
+
 export function multiTurnFixture(): string {
   return shell(`
     <article data-message-author-role="user" data-message-id="u1"><p>One</p></article>

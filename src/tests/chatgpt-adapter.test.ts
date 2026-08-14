@@ -9,6 +9,7 @@ import type { Block, Conversation } from "../types/conversation";
 import {
   CHATGPT_LOCATION,
   accessibilityLabelsFixture,
+  assistantImageOnlyWithActionsFixture,
   emptyConversationFixture,
   missingTitleFixture,
   multiTurnFixture,
@@ -103,6 +104,51 @@ describe("ChatGPTAdapter messages", () => {
     expect(result.markdown).toContain("Keep the real assistant answer.");
     expect(result.markdown).not.toContain("You said:");
     expect(result.markdown).not.toContain("ChatGPT said:");
+  });
+
+  it("keeps an image-only assistant message structured and complete", () => {
+    const conversation = conversationFrom(new ChatGPTAdapter().parse(parseDocument(assistantImageOnlyWithActionsFixture()), CHATGPT_LOCATION));
+    const assistantMessage = conversation.messages[1];
+
+    expect(assistantMessage.blocks).toContainEqual(expect.objectContaining({
+      type: "image",
+      src: "https://images.example.test/generated-landscape.png",
+      alt: "Generated landscape",
+    }));
+    expect(assistantMessage.metadata.isPartial).not.toBe(true);
+    expect(conversation.metadata.parseWarnings.map((warning) => warning.code)).not.toContain("chatgpt-message-empty-blocks");
+  });
+
+  it("removes assistant action controls from blocks and original text", () => {
+    const conversation = conversationFrom(new ChatGPTAdapter().parse(parseDocument(assistantImageOnlyWithActionsFixture()), CHATGPT_LOCATION));
+    const assistantMessage = conversation.messages[1];
+    const serializedBlocks = JSON.stringify(assistantMessage.blocks);
+
+    expect(assistantMessage.originalText).toBe("");
+    expect(serializedBlocks).not.toContain("Edit");
+    expect(serializedBlocks).not.toContain("Copy response");
+    expect(serializedBlocks).not.toContain("Like");
+    expect(serializedBlocks).not.toContain("Dislike");
+  });
+
+  it("does not mark a normal assistant text message as partial", () => {
+    const conversation = conversationFrom(new ChatGPTAdapter().parse(parseDocument(singleTurnFixture()), CHATGPT_LOCATION));
+
+    expect(conversation.messages[1].metadata.isPartial).not.toBe(true);
+  });
+
+  it("exports an image-only assistant without partial or action UI text", () => {
+    const conversation = conversationFrom(new ChatGPTAdapter().parse(parseDocument(assistantImageOnlyWithActionsFixture()), CHATGPT_LOCATION));
+    const result = exportConversationToMarkdown(conversation);
+
+    expect(result.status).toBe("success");
+    if (result.status !== "success") throw new Error("Expected Markdown export success");
+    expect(result.markdown).toContain("![Generated landscape](<https://images.example.test/generated-landscape.png>)");
+    expect(result.markdown).not.toContain("Export note: this message may be incomplete.");
+    expect(result.markdown).not.toContain("Edit");
+    expect(result.markdown).not.toContain("Copy response");
+    expect(result.markdown).not.toContain("Like");
+    expect(result.markdown).not.toContain("Dislike");
   });
 
   it("preserves DOM order across multiple turns", () => {
