@@ -10,7 +10,7 @@ export type PdfExportErrorCode =
   | "PDF_GENERATION_FAILED";
 
 export type PdfExportResult =
-  | { status: "success"; data: Uint8Array; filename: string; mimeType: typeof PDF_MIME_TYPE; warnings: PdfRenderWarning[] }
+  | { status: "success"; data: Uint8Array; filename: string; mimeType: typeof PDF_MIME_TYPE; warnings: PdfExportWarning[] }
   | { status: "error"; code: PdfExportErrorCode };
 
 export interface PdfDocumentMetadata {
@@ -42,10 +42,18 @@ export interface PdfTableBlockPlan {
   rows: PdfInlinePlan[][][];
 }
 
-export interface PdfRenderWarning {
-  code: "IMAGE_UNSAFE_SOURCE" | "IMAGE_EMBED_FAILED";
+export interface PdfExportWarning {
+  code:
+    | "IMAGE_UNSAFE_SOURCE"
+    | "IMAGE_EMBED_FAILED"
+    | "MATH_LATEX_SOURCE_FALLBACK"
+    | "UNKNOWN_BLOCK_FALLBACK"
+    | "UNKNOWN_BLOCK_EMPTY";
   message: string;
 }
+
+/** @deprecated Use PdfExportWarning. */
+export type PdfRenderWarning = PdfExportWarning;
 
 export type PdfBlockPlan =
   | { type: "text"; content: PdfInlinePlan[] }
@@ -55,6 +63,8 @@ export type PdfBlockPlan =
   | { type: "list"; ordered: boolean; items: PdfListItemPlan[] }
   | { type: "table"; headers: PdfInlinePlan[][]; rows: PdfInlinePlan[][][] }
   | { type: "image"; src: string; alt: string; caption?: string }
+  | { type: "math"; text: string }
+  | { type: "unknown"; text: string }
   | { type: "quote"; blocks: PdfBlockPlan[] }
   | { type: "thematic-break" };
 
@@ -67,7 +77,7 @@ export interface PdfDocumentPlan {
   title: string;
   metadata: PdfDocumentMetadata;
   messages: PdfMessagePlan[];
-  warnings: PdfRenderWarning[];
+  warnings: PdfExportWarning[];
 }
 
 export function hasValidPdfSignature(bytes: Uint8Array): boolean {

@@ -8,7 +8,7 @@ import type {
   PdfListBlockPlan,
   PdfListItemPlan,
   PdfMessagePlan,
-  PdfRenderWarning,
+  PdfExportWarning,
 } from "./pdf-types";
 
 const SUPPORTED_BLOCK_TYPES = new Set<Block["type"]>([
@@ -17,10 +17,12 @@ const SUPPORTED_BLOCK_TYPES = new Set<Block["type"]>([
   "heading",
   "list",
   "code",
+  "math",
   "table",
   "image",
   "quote",
   "thematic-break",
+  "unknown",
 ]);
 
 function isSupportedMessageRole(role: MessageRole): role is PdfMessagePlan["role"] {
@@ -31,7 +33,7 @@ export function createPdfDocumentPlan(conversation: Conversation): PdfDocumentPl
   const metadata: PdfDocumentMetadata = { platform: conversation.platform };
   if (conversation.model !== undefined) metadata.model = conversation.model;
 
-  const warnings: PdfRenderWarning[] = [];
+  const warnings: PdfExportWarning[] = [];
   const messages = [...conversation.messages]
     .sort((left, right) => left.order - right.order)
     .flatMap((message) => {
@@ -49,7 +51,7 @@ export function createPdfDocumentPlan(conversation: Conversation): PdfDocumentPl
   };
 }
 
-function extractMessageBlocks(message: Message, warnings: PdfRenderWarning[]): PdfBlockPlan[] {
+function extractMessageBlocks(message: Message, warnings: PdfExportWarning[]): PdfBlockPlan[] {
   const blocks = message.blocks
     .map((block) => mapBlock(block, warnings))
     .filter((block): block is PdfBlockPlan => block !== null);
@@ -61,7 +63,7 @@ function extractMessageBlocks(message: Message, warnings: PdfRenderWarning[]): P
   return [{ type: "paragraph", content: [{ text: fallbackText }] }];
 }
 
-function mapBlock(block: Block, warnings: PdfRenderWarning[]): PdfBlockPlan | null {
+function mapBlock(block: Block, warnings: PdfExportWarning[]): PdfBlockPlan | null {
   if (!SUPPORTED_BLOCK_TYPES.has(block.type)) return null;
 
   switch (block.type) {
@@ -72,6 +74,12 @@ function mapBlock(block: Block, warnings: PdfRenderWarning[]): PdfBlockPlan | nu
       return { type: "heading", level: block.level, content: mapInlineContent(block.content) };
     case "code":
       return { type: "code", code: block.code, language: block.language };
+    case "math":
+      warnings.push({
+        code: "MATH_LATEX_SOURCE_FALLBACK",
+        message: "Math was rendered as readable LaTeX source text because PDF formula layout is not supported.",
+      });
+      return { type: "math", text: block.display ? `$$\n${block.latex}\n$$` : `$${block.latex}$` };
     case "list":
       return mapListBlock(block);
     case "table":
@@ -90,6 +98,19 @@ function mapBlock(block: Block, warnings: PdfRenderWarning[]): PdfBlockPlan | nu
       return { type: "image", src: block.src, alt: block.alt, caption: block.caption };
     case "quote":
       return mapQuoteBlock(block.blocks, warnings);
+    case "unknown":
+      if (block.rawText.trim().length > 0) {
+        warnings.push({
+          code: "UNKNOWN_BLOCK_FALLBACK",
+          message: "Unsupported content was preserved as fallback text.",
+        });
+        return { type: "unknown", text: block.rawText.trim() };
+      }
+      warnings.push({
+        code: "UNKNOWN_BLOCK_EMPTY",
+        message: "Unsupported content had no readable text; a placeholder was rendered.",
+      });
+      return { type: "unknown", text: "[Unsupported content]" };
     case "thematic-break":
       return { type: "thematic-break" };
     default:
@@ -97,7 +118,7 @@ function mapBlock(block: Block, warnings: PdfRenderWarning[]): PdfBlockPlan | nu
   }
 }
 
-function mapQuoteBlock(blocks: Block[], warnings: PdfRenderWarning[]): PdfBlockPlan {
+function mapQuoteBlock(blocks: Block[], warnings: PdfExportWarning[]): PdfBlockPlan {
   const mappedBlocks = blocks
     .map((block) => mapBlock(block, warnings))
     .filter((block): block is PdfBlockPlan => block !== null);

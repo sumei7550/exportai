@@ -359,6 +359,68 @@ describe("PDF Structured Content Rendering", () => {
   });
 });
 
+describe("PDF Math and Unknown Rendering", () => {
+  it("renders inline math as LaTeX source and aggregates its warning", () => {
+    const conversation = createBasicConversationFixture();
+    conversation.messages[0]!.blocks = [{ id: "math-inline", type: "math", latex: "x^2 + y^2", display: false }];
+
+    const plan = createPdfDocumentPlan(conversation);
+    expect(plan.messages[0]?.blocks).toEqual([{ type: "math", text: "$x^2 + y^2$" }]);
+    expect(plan.warnings.map((warning) => warning.code)).toEqual(["MATH_LATEX_SOURCE_FALLBACK"]);
+  });
+
+  it("renders display and empty math source without dropping the block", () => {
+    const conversation = createBasicConversationFixture();
+    conversation.messages[0]!.blocks = [
+      { id: "math-display", type: "math", latex: "\\int_0^1 x dx", display: true },
+      { id: "math-empty", type: "math", latex: "", display: false },
+    ];
+
+    const plan = createPdfDocumentPlan(conversation);
+    expect(plan.messages[0]?.blocks).toEqual([
+      { type: "math", text: "$$\n\\int_0^1 x dx\n$$" },
+      { type: "math", text: "$$" },
+    ]);
+    expect(plan.warnings).toHaveLength(2);
+    expect(exportConversationToPdf(conversation)).toMatchObject({ status: "success" });
+  });
+
+  it("renders unknown raw text and the required empty placeholder", () => {
+    const conversation = createBasicConversationFixture();
+    conversation.messages[0]!.blocks = [
+      { id: "unknown-text", type: "unknown", rawText: "Preserved fallback" },
+      { id: "unknown-empty", type: "unknown", rawText: "   " },
+    ];
+
+    const plan = createPdfDocumentPlan(conversation);
+    expect(plan.messages[0]?.blocks).toEqual([
+      { type: "unknown", text: "Preserved fallback" },
+      { type: "unknown", text: "[Unsupported content]" },
+    ]);
+    expect(plan.warnings.map((warning) => warning.code)).toEqual([
+      "UNKNOWN_BLOCK_FALLBACK",
+      "UNKNOWN_BLOCK_EMPTY",
+    ]);
+  });
+
+  it("returns aggregated math and unknown warnings with a valid PDF", () => {
+    const conversation = createBasicConversationFixture();
+    conversation.messages[0]!.blocks = [
+      { id: "math", type: "math", latex: "a+b", display: false },
+      { id: "unknown", type: "unknown", rawText: "Raw content" },
+    ];
+
+    const result = exportConversationToPdf(conversation);
+    expect(result.status).toBe("success");
+    if (result.status === "error") throw new Error(result.code);
+    expect(result.warnings.map((warning) => warning.code)).toEqual([
+      "MATH_LATEX_SOURCE_FALLBACK",
+      "UNKNOWN_BLOCK_FALLBACK",
+    ]);
+    expect(hasValidPdfSignature(result.data)).toBe(true);
+  });
+});
+
 describe("PDF Image Rendering", () => {
   it("embeds a PNG data URI", () => {
     const result = exportConversationToPdf(createImageConversation(PNG_DATA_URI));

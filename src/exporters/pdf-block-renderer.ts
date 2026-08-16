@@ -55,6 +55,10 @@ function renderBlock(
     case "code":
       renderCodeBlock(state, block.code, block.language, x, maxWidth);
       return;
+    case "math":
+    case "unknown":
+      renderPlainText(state, block.text, x, maxWidth, BODY_FONT_SIZE);
+      return;
     case "list":
       renderListBlock(state, block.ordered, block.items, x, maxWidth, 0);
       return;
