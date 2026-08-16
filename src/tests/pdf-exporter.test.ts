@@ -80,6 +80,16 @@ function createStructuredConversationFixture(): Conversation {
             items: [{ id: "list-item-001", content: [{ text: "Unordered item" }] }],
           },
           {
+            id: "block-table-001",
+            type: "table",
+            headers: [[{ text: "Name", bold: true }], [{ text: "Description" }]],
+            rows: [
+              [[{ text: "ExportAI" }], [{ text: "Local-first exporter" }]],
+              [[{ text: "中文" }], [{ text: "支持多行\n文本" }]],
+              [[], [{ text: "This is a deliberately long table cell that must wrap across many lines without being clipped or omitted from the generated PDF. " .repeat(8) }]],
+            ],
+          },
+          {
             id: "block-list-ordered-001",
             type: "list",
             ordered: true,
@@ -289,6 +299,33 @@ describe("PDF Structured Content Rendering", () => {
     const breakBlock = plan.messages[0]?.blocks.find((block) => block.type === "thematic-break");
 
     expect(breakBlock).toEqual({ type: "thematic-break" });
+  });
+
+  it("maps table headers, rows, and inline cell content", () => {
+    const plan = createPdfDocumentPlan(createStructuredConversationFixture());
+    const tableBlock = plan.messages[0]?.blocks.find((block) => block.type === "table");
+
+    expect(tableBlock).toEqual({
+      type: "table",
+      headers: [[{ text: "Name", bold: true }], [{ text: "Description" }]],
+      rows: [
+        [[{ text: "ExportAI" }], [{ text: "Local-first exporter" }]],
+        [[{ text: "中文" }], [{ text: "支持多行\n文本" }]],
+        [[], [{ text: "This is a deliberately long table cell that must wrap across many lines without being clipped or omitted from the generated PDF. " .repeat(8) }]],
+      ],
+    });
+  });
+
+  it("exports basic, Chinese, empty, and long-wrapped tables to a valid PDF", () => {
+    const conversation = createStructuredConversationFixture();
+    const table = conversation.messages[0]?.blocks.find((block) => block.type === "table");
+    expect(table?.type).toBe("table");
+
+    const result = exportConversationToPdf(conversation);
+    expect(result.status).toBe("success");
+    if (result.status === "error") throw new Error(result.code);
+    expect(hasValidPdfSignature(result.data)).toBe(true);
+    expect(result.data.length).toBeGreaterThan(0);
   });
 
   it("exports structured content to a valid PDF", () => {

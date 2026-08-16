@@ -16,6 +16,7 @@ const SUPPORTED_BLOCK_TYPES = new Set<Block["type"]>([
   "heading",
   "list",
   "code",
+  "table",
   "quote",
   "thematic-break",
 ]);
@@ -69,6 +70,12 @@ function mapBlock(block: Block): PdfBlockPlan | null {
       return { type: "code", code: block.code, language: block.language };
     case "list":
       return mapListBlock(block);
+    case "table":
+      return {
+        type: "table",
+        headers: block.headers.map(mapInlineContent),
+        rows: block.rows.map((row) => row.map(mapInlineContent)),
+      };
     case "quote":
       return mapQuoteBlock(block.blocks);
     case "thematic-break":

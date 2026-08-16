@@ -20,8 +20,11 @@ import {
   getLineHeight,
   setBodyTextColor,
 } from "./pdf-layout";
+import autoTable from "jspdf-autotable";
 import { renderInlineContent, renderPlainText } from "./pdf-inline-renderer";
 import type { PdfBlockPlan, PdfInlinePlan, PdfListItemPlan } from "./pdf-types";
+
+type AutoTableDocument = PdfLayoutState["doc"] & { lastAutoTable?: { finalY: number } };
 
 export function renderMessageBlocks(
   state: PdfLayoutState,
@@ -55,6 +58,9 @@ function renderBlock(
     case "list":
       renderListBlock(state, block.ordered, block.items, x, maxWidth, 0);
       return;
+    case "table":
+      renderTableBlock(state, block.headers, block.rows, x, maxWidth);
+      return;
     case "quote":
       renderQuoteBlock(state, block.blocks, x, maxWidth);
       return;
@@ -62,6 +68,65 @@ function renderBlock(
       renderThematicBreak(state, x, maxWidth);
       return;
   }
+}
+
+function renderTableBlock(
+  state: PdfLayoutState,
+  headers: PdfInlinePlan[][],
+  rows: PdfInlinePlan[][][],
+  x: number,
+  maxWidth: number,
+): void {
+  const columnCount = Math.max(
+    headers.length,
+    ...rows.map((row) => row.length),
+    1,
+  );
+  const head = [normalizeTableRow(headers, columnCount)];
+  const body = rows.map((row) => normalizeTableRow(row, columnCount));
+
+  state.doc.setFont(FONT_FAMILY, "normal");
+  state.doc.setFontSize(BODY_FONT_SIZE);
+  autoTable(state.doc, {
+    startY: state.y,
+    margin: { left: x, right: state.doc.internal.pageSize.getWidth() - x - maxWidth },
+    tableWidth: maxWidth,
+    head,
+    body,
+    theme: "grid",
+    showHead: "everyPage",
+    rowPageBreak: "auto",
+    styles: {
+      font: FONT_FAMILY,
+      fontStyle: "normal",
+      fontSize: BODY_FONT_SIZE - 1,
+      cellPadding: 2,
+      overflow: "linebreak",
+      valign: "top",
+      textColor: [0, 0, 0],
+      lineColor: [190, 190, 190],
+      lineWidth: 0.2,
+    },
+    headStyles: {
+      font: FONT_FAMILY,
+      fontStyle: "bold",
+      fillColor: [238, 242, 247],
+      textColor: [0, 0, 0],
+    },
+    alternateRowStyles: { fillColor: [250, 250, 250] },
+  });
+
+  const finalY = (state.doc as AutoTableDocument).lastAutoTable?.finalY;
+  state.y = typeof finalY === "number" ? finalY : state.y;
+  state.doc.setFont(FONT_FAMILY, "normal");
+}
+
+function normalizeTableRow(row: PdfInlinePlan[][], columnCount: number): string[] {
+  return Array.from({ length: columnCount }, (_, index) => inlineContentToTableText(row[index] ?? []));
+}
+
+function inlineContentToTableText(content: PdfInlinePlan[]): string {
+  return content.map((inline) => inline.text).join("");
 }
 
 function renderHeading(
