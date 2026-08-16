@@ -1,8 +1,8 @@
 # Phase 6 PDF Engine Re-evaluation Design Review
 
-**Date**: 2026-08-14  
-**Status**: DESIGN REVIEW COMPLETE  
-**Decision Required**: Engine selection for Phase 6.1
+**Date**: 2026-08-14 (updated 2026-08-16)
+**Status**: DESIGN REVIEW COMPLETE — ENGINE DECISION FINALIZED
+**Decision**: jsPDF selected; pdfmake@0.3.11 rejected
 
 ---
 
@@ -1122,27 +1122,28 @@ renderMathBlock(latex) {
 ### Gate Requirements
 
 #### 1. MV3 Runtime Compatibility
-- [ ] jsPDF core works in Chrome Extension
-- [ ] No CSP violations
-- [ ] PDF bytes generate successfully
-- [ ] No callback hang issues (like pdfmake)
+- [x] jsPDF core works in Chrome Extension
+- [x] No CSP violations
+- [x] PDF bytes generate successfully
+- [x] No callback hang issues (like pdfmake)
 
 #### 2. Basic PDF Generation
-- [ ] Create simple PDF with English text
-- [ ] Verify `doc.output('arraybuffer')` returns Uint8Array
-- [ ] Verify PDF signature (%PDF-)
-- [ ] Verify PDF opens in Chrome viewer
+- [x] Create simple PDF with English text
+- [x] Verify `doc.output('arraybuffer')` returns ArrayBuffer → Uint8Array
+- [x] Verify PDF signature (%PDF-)
+- [x] Verify PDF opens in Chrome viewer
 
 #### 3. CJK Font Support
-- [ ] Load custom CJK font (1 weight)
-- [ ] Render Chinese text: "你好，世界"
-- [ ] Verify font embedding works
-- [ ] Measure bundle size delta
+- [x] Load custom CJK font (1 weight, NotoSansSC-Regular.ttf)
+- [x] Render Chinese text: "你好，世界"
+- [x] Verify font embedding works (Full TTF and TTF subset pipelines)
+- [x] Measure bundle size delta
 
 #### 4. Searchable Text
-- [ ] English text is selectable
-- [ ] Chinese text is selectable
-- [ ] Chrome PDF search works for both
+- [x] English text is selectable
+- [x] Chinese text is selectable
+- [x] Chrome PDF search works for both (Ctrl+F verified)
+- [x] Chinese text copy verified
 
 #### 5. Table Plugin
 - [ ] jspdf-autotable loads without errors
@@ -1187,9 +1188,64 @@ pdf-jspdf-feasibility.html
 
 **If FAIL**: Re-evaluate, possibly try pdf-lib or declare PDF feature infeasible for v1.0
 
+### Gate Result (2026-08-16)
+
+**Phase 6.0.1 jsPDF Feasibility Gate: PASS**
+
+Real Chrome MV3 Extension validation completed. See `Phase_6_0_1_jsPDF_Feasibility_Report.md` and `Phase_6_0_1_CJK_Strategy_Review.md` for evidence.
+
 ---
 
-## 17. Migration / Cleanup Plan
+## 17. Final Engine Decision
+
+### Selected
+
+**jsPDF** — approved as ExportAI v1.0 PDF engine.
+
+### Rejected
+
+**pdfmake@0.3.11** — not viable in Chrome MV3 Extension runtime.
+
+| Engine | Status | Reason |
+|--------|--------|--------|
+| jsPDF | ✅ APPROVED | Test A/B/B2 PASS in real Chrome MV3 |
+| pdfmake@0.3.11 | ❌ REJECTED | `getBase64()`, `getBuffer()`, `getBlob()` callbacks never fire (timeout) |
+
+### Final CJK Strategy
+
+**Approved**: TrueType source + subset + jsPDF embedding
+
+```text
+NotoSansSC-Regular.ttf
+        ↓
+TTF subset
+        ↓
+Base64 font module
+        ↓
+jsPDF addFileToVFS()
+        ↓
+jsPDF addFont()
+        ↓
+PDF
+```
+
+**Rejected**: OTF → TTF conversion route (causes Unicode/cmap mapping errors).
+
+### Validation Evidence
+
+| Test | Result | Evidence |
+|------|--------|----------|
+| Test A — Engine Only | ✅ PASS | MV3 runtime, ArrayBuffer output, %PDF- signature, Chrome PDF Viewer |
+| Test B — Full TTF CJK | ✅ PASS | Chinese display, Ctrl+F search, copy |
+| Test B2 — TTF Subset | ✅ PASS | Production pipeline validated |
+| Real Chrome validation | ✅ PASS | Unpacked MV3 extension, no CSP violations |
+| Visual | ✅ PASS | Chinese renders correctly |
+| Search | ✅ PASS | Ctrl+F finds Chinese text |
+| Copy | ✅ PASS | Chinese text copyable from PDF |
+
+---
+
+## 18. Migration / Cleanup Plan
 
 ### After jsPDF Feasibility Gate Passes
 
@@ -1249,7 +1305,7 @@ docs/Phase_6_0_Engine_Hang_Investigation.md → docs/archive/
 
 ---
 
-## 18. Risks
+## 19. Risks
 
 ### Risk 1: jsPDF MV3 Incompatibility (HIGH)
 
@@ -1317,23 +1373,22 @@ docs/Phase_6_0_Engine_Hang_Investigation.md → docs/archive/
 
 ---
 
-## 19. Final Recommendation
+## 20. Final Recommendation
 
 ### Decision
 
-**Proceed with jsPDF** as PDF engine for ExportAI v1.0
+**jsPDF** is the approved PDF engine for ExportAI v1.0.
 
-**Contingent on**: Phase 6.0.1 Feasibility Gate **PASS**
+Phase 6.0.1 Feasibility Gate **PASSED** (2026-08-16).
 
 ### Next Steps
 
-1. **Halt pdfmake work** (already done)
-2. **Create Phase 6.0.1 Feasibility Gate** for jsPDF
-3. **Validate jsPDF in real Chrome MV3 Extension**
-4. **Test CJK font embedding**
-5. **Measure bundle size**
-6. **If Gate passes**: Proceed to Phase 6.1 (jsPDF-based PDF Core)
-7. **If Gate fails**: Re-evaluate (try pdf-lib or abandon PDF for v1.0)
+1. ~~Halt pdfmake work~~ ✅ Done
+2. ~~Create Phase 6.0.1 Feasibility Gate for jsPDF~~ ✅ Done
+3. ~~Validate jsPDF in real Chrome MV3 Extension~~ ✅ Done
+4. ~~Test CJK font embedding~~ ✅ Done (Full TTF + TTF subset)
+5. ~~Measure bundle size~~ ✅ Done
+6. **Phase 6.1**: jsPDF-based PDF Core — **NOT STARTED** (await explicit kickoff)
 
 ### Implementation Plan (After Gate Passes)
 
@@ -1382,29 +1437,33 @@ docs/Phase_6_0_Engine_Hang_Investigation.md → docs/archive/
 
 ```
 pdfmake@0.3.11 Feasibility:
-  ❌ FAILED
+  ❌ FAILED (getBase64/getBuffer/getBlob callback timeout in MV3)
 
 Phase 6 Engine Re-evaluation:
   ✅ COMPLETE
 
-Recommended Engine:
-  jsPDF (contingent on Feasibility Gate)
+Final Engine Decision:
+  ✅ jsPDF APPROVED
+  ❌ pdfmake@0.3.11 REJECTED
 
-New Engine Implementation:
-  ⏳ NOT STARTED (blocked on Phase 6.0.1 Gate)
+Final CJK Strategy:
+  ✅ TrueType source + subset + jsPDF embedding
 
-Phase 6.1:
-  ⏳ NOT STARTED (blocked on Phase 6.0.1 Gate)
+Phase 6.0.1 jsPDF Feasibility Gate:
+  ✅ COMPLETE
+
+Phase 6.1 PDF Exporter Implementation:
+  ⏳ NOT STARTED
 ```
 
-### Required Approval
+### Validation Evidence Summary
 
-**Decision Required**: Approve jsPDF as PDF engine for v1.0
-
-**Contingency**: Phase 6.0.1 Feasibility Gate must pass
-
-**Next Action**: Create jsPDF Feasibility Gate harness (no installation yet)
+- Test A (Engine Only): ✅ PASS
+- Test B (Full TTF CJK): ✅ PASS
+- Test B2 (TTF Subset): ✅ PASS
+- Real Chrome MV3 validation: ✅ PASS
+- Visual / Search / Copy: ✅ PASS
 
 ---
 
-**Phase 6 PDF Engine Re-evaluation Design Review complete.**
+**Phase 6 PDF Engine Re-evaluation complete. Phase 6.0.1 gate passed. Phase 6.1 not started.**

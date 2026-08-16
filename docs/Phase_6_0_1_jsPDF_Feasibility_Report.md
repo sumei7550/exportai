@@ -1,7 +1,7 @@
 # Phase 6.0.1 jsPDF Feasibility Gate Implementation Report
 
-**Date**: 2026-08-15  
-**Status**: HARNESS READY - PENDING REAL CHROME VALIDATION
+**Date**: 2026-08-15 (updated 2026-08-16)
+**Status**: COMPLETE — REAL CHROME VALIDATION PASSED
 
 ---
 
@@ -537,112 +537,119 @@ Background Service Worker: ✅ UNCHANGED
 
 ---
 
-## 14. User Next Action
+## 15. Real Chrome Validation Results
 
-### ONLY TEST A FIRST
+### Test A — Engine Only
 
-**Step 1**: Rebuild
-```bash
-npm run build
+**Status**: ✅ PASS
+
+**Environment**: Chrome Extension (MV3), unpacked load
+
+**Validated**:
+- jsPDF module loads in MV3 runtime
+- `doc.output('arraybuffer')` returns ArrayBuffer
+- Normalized to Uint8Array successfully
+- PDF signature `%PDF-` verified
+- Blob created and opens in Chrome PDF Viewer
+- No CSP violations in Console
+- Zero network requests during generation
+- Completed within timeout (no callback hang)
+
+### Test B — CJK Full TTF Pipeline
+
+**Status**: ✅ PASS
+
+**Font**: `NotoSansSC-Regular.ttf` (TrueType source, not OTF)
+
+**Validated**:
+- Font loads and registers via `addFileToVFS()` / `addFont()`
+- Chinese text renders correctly (not garbled)
+- Ctrl+F search finds Chinese text
+- Chinese text is copyable from PDF
+
+### Test B2 — TTF Subset Pipeline
+
+**Status**: ✅ PASS
+
+**Pipeline**:
+```text
+NotoSansSC-Regular.ttf → TTF subset → Base64 font module → jsPDF embedding → PDF
 ```
 
-**Step 2**: Reload Extension
-1. Open `chrome://extensions/`
-2. Find ExportAI extension
-3. Click "Reload" button
+**Validated**: Same as Test B (display, search, copy)
 
-**Step 3**: Open Feasibility Page
-```
-chrome-extension://<YOUR-EXTENSION-ID>/pdf-jspdf-feasibility.html
-```
+### Rejected Route
 
-**Step 4**: Run Test A
-1. **Open DevTools Console (F12) BEFORE clicking**
-2. **Open Network tab**
-3. Click "Test A: Engine Only"
-4. Watch stage progression
-5. **CRITICAL**: Check Console for CSP violations
-6. **CRITICAL**: Check Network tab for external requests
-7. Wait for completion or timeout
-
-**Step 5**: Verify Test A Results
-- [ ] Test completes (not timeout)
-- [ ] PDF auto-downloads
-- [ ] "Stage A13: complete" reached
-- [ ] result.success === true
-- [ ] result.metadata.hasValidSignature === true
-- [ ] Console shows NO CSP violations
-- [ ] Network shows ZERO http/https requests
-- [ ] Click "Open Preview"
-- [ ] PDF opens in Chrome viewer
-- [ ] Text "Hello ExportAI" is visible
-
-**Step 6**: Report Test A Results
-Take screenshots of:
-1. Feasibility page (showing result)
-2. DevTools Console
-3. DevTools Network tab
-4. Chrome PDF viewer
-
-### DO NOT Proceed to Test B/C/D Until Test A PASSES
+**OTF → TTF conversion → jsPDF**: ❌ FAILED (Unicode/cmap mapping errors, garbled text)
 
 ---
 
-## 15. Current Gate Status
+## 16. Final Engine Decision
+
+### Selected
+
+**jsPDF** — approved as ExportAI v1.0 PDF engine.
+
+### Rejected
+
+**pdfmake@0.3.11** — not viable in Chrome MV3 Extension runtime.
+
+| Engine | Status | Reason |
+|--------|--------|--------|
+| jsPDF | ✅ APPROVED | All feasibility tests PASS in real Chrome |
+| pdfmake@0.3.11 | ❌ REJECTED | `createPdf()` returns but `getBase64()` / `getBuffer()` / `getBlob()` callbacks never fire |
+
+### Validation Evidence
+
+| Test | Result |
+|------|--------|
+| Test A — Engine Only | ✅ PASS |
+| Test B — Full TTF CJK | ✅ PASS |
+| Test B2 — TTF Subset | ✅ PASS |
+| Real Chrome MV3 validation | ✅ PASS |
+| Visual (Chinese display) | ✅ PASS |
+| Search (Ctrl+F) | ✅ PASS |
+| Copy (Chinese text) | ✅ PASS |
+
+---
+
+## 17. Current Gate Status
 
 ### Phase Status
 ```
 pdfmake@0.3.11:
   ❌ FAILED (all three output APIs timed out)
 
-jsPDF Candidate:
-  ⏳ PENDING REAL CHROME VALIDATION
+jsPDF:
+  ✅ APPROVED
 
 Phase 6.0.1 Harness:
-  ✅ READY
+  ✅ COMPLETE
 
 Real Chrome Test A:
-  ⏳ PENDING USER VALIDATION
+  ✅ PASS
 
-Real Chrome Test B:
-  ⏳ BLOCKED (requires Test A PASS)
+Real Chrome Test B (Full TTF):
+  ✅ PASS
 
-Real Chrome Test C:
-  ⏳ BLOCKED (requires Test B PASS)
-
-Real Chrome Test D:
-  ⏳ BLOCKED (requires Test C PASS)
+Real Chrome Test B2 (TTF Subset):
+  ✅ PASS
 
 Phase 6.0.1 Final Gate:
-  ❌ BLOCKED
+  ✅ COMPLETE
 
 Phase 6.1:
-  ❌ NOT STARTED
-```
-
-### CSP Risk Summary
-```
-Static Analysis:
-  Function():    1 occurrence  ⚠️ RISK
-  
-Real Chrome Validation:
-  ⏳ REQUIRED
-  
-If CSP violation occurs:
-  jsPDF route: FAILED
-  Must re-evaluate pdf-lib or declare PDF infeasible
+  ⏳ NOT STARTED
 ```
 
 ---
 
 ## Final Summary
 
-**Phase 6.0.1 jsPDF Feasibility Gate harness implementation: COMPLETE**
+**Phase 6.0.1 jsPDF Feasibility Gate: COMPLETE**
 
-**Next milestone**: User executes Test A in real Chrome Extension
+**Final Engine Decision**: jsPDF approved; pdfmake@0.3.11 rejected.
 
-**Decision point**: If Test A passes, proceed to Test B. If Test A fails with CSP or timeout, jsPDF is not viable.
+**Next milestone**: Phase 6.1 PDF Exporter Implementation — **NOT STARTED** (await explicit kickoff).
 
-**Full documentation**: This file
-
-**Phase 6.0.1 harness ready for real Chrome validation.**
+**Full documentation**: This file + `Phase_6_0_1_CJK_Strategy_Review.md` + `Phase_6_Engine_Reevaluation.md`

@@ -1,19 +1,22 @@
 # Phase 6.0.1 CJK Font Strategy Decision Review
 
-**Date**: 2026-08-15  
-**Purpose**: Evaluate CJK production strategies for ExportAI v1.0 PDF feature  
-**Status**: ANALYSIS ONLY - NO IMPLEMENTATION
+**Date**: 2026-08-15 (updated 2026-08-16)
+**Purpose**: Evaluate CJK production strategies for ExportAI v1.0 PDF feature
+**Status**: COMPLETE — STRATEGY APPROVED
 
 ---
 
 ## Current Situation Summary
 
-### Test Results
-- **Test A (Engine Only)**: ✅ PASS - jsPDF core works in Chrome MV3
-- **Test B (CJK Font)**: ❌ FAIL - Garbled Unicode mapping
+### Test Results (Final — 2026-08-16)
+- **Test A (Engine Only)**: ✅ PASS — jsPDF core works in Chrome MV3
+- **Test B (Full TTF CJK)**: ✅ PASS — Chinese display, search, copy verified
+- **Test B2 (TTF Subset)**: ✅ PASS — production pipeline validated
 
-### Critical Finding
-**jsPDF engine is viable**, but current CJK font loading method produces broken Unicode-to-glyph mapping.
+### Final Finding
+**jsPDF engine is approved.** CJK strategy is **TrueType source + subset + jsPDF embedding**.
+
+**Rejected route**: OTF → TTF conversion → jsPDF (causes Unicode/cmap mapping errors).
 
 ---
 
@@ -662,39 +665,62 @@ This affects less than 1% of typical conversations.
 
 ---
 
-## Phase 6.0.1 Current Status
+## Phase 6.0.1 Final Status
 
 ### Test Results
 ```
 Test A (Engine Only):
   ✅ PASS - jsPDF works in Chrome MV3
 
-Test B (CJK Font):
-  ❌ FAIL - Garbled text (root cause understood)
+Test B (Full TTF CJK):
+  ✅ PASS - Chinese display, Ctrl+F search, copy
 
-Root Cause:
-  ✅ IDENTIFIED - Missing jspdf-font preprocessing
+Test B2 (TTF Subset):
+  ✅ PASS - production pipeline validated
 
-Solution:
-  ✅ VALIDATED - Static subset + jspdf-font conversion
+Rejected Route (OTF → TTF conversion):
+  ❌ FAIL - Unicode/cmap mapping errors (garbled text)
+```
+
+### Final CJK Strategy
+
+**Approved**:
+```text
+NotoSansSC-Regular.ttf
+        ↓
+TTF subset
+        ↓
+Base64 font module
+        ↓
+jsPDF addFileToVFS()
+        ↓
+jsPDF addFont()
+        ↓
+PDF
+```
+
+**Do NOT use**:
+```text
+NotoSansSC-Regular.otf
+        ↓
+OTF → TTF conversion
+        ↓
+jsPDF
 ```
 
 ### Gate Status
 ```
 jsPDF Engine:
-  ✅ VIABLE for v1.0
+  ✅ APPROVED
 
 CJK Strategy:
-  ✅ DECIDED - Static Subset Font (Option B)
+  ✅ APPROVED - TrueType source + subset + jsPDF embedding
 
 Phase 6.0.1 Gate:
-  ⏳ BLOCKED (Test B not fixed, but strategy known)
-
-Next Step:
-  Await approval to fix Test B with static subset
+  ✅ COMPLETE
 
 Phase 6.1:
-  ❌ NOT STARTED
+  ⏳ NOT STARTED
 ```
 
 ---
@@ -703,29 +729,35 @@ Phase 6.1:
 
 ### For ExportAI v1.0
 
-**PDF Engine**: jsPDF (Test A confirmed working)
+**PDF Engine**: jsPDF (Test A confirmed working in real Chrome MV3)
 
-**CJK Strategy**: Static Subset Font
-- GB2312 + common extensions (~8,000 characters)
-- Preprocessed with pyftsubset + jspdf-font
-- Bundle size: 2.5-3.7 MB
+**CJK Strategy**: TrueType source + static subset + jsPDF embedding
+- Source: `NotoSansSC-Regular.ttf` (TrueType, not OTF)
+- Build-time TTF subsetting (GB2312 + common extensions for production)
+- jsPDF `addFileToVFS()` / `addFont()` embedding
+- Bundle size target: 2.5-3.7 MB (Regular + Bold subsets)
 - Coverage: 99%+ of real-world Chinese
 
+**Validation Evidence**:
+- Full TTF pipeline: ✅ PASS (display, search, copy)
+- TTF subset pipeline: ✅ PASS (display, search, copy)
+- Real Chrome MV3: ✅ PASS
+
 **Implementation Timeline**:
-- Phase 6.0.1: Fix Test B with subset font (validate strategy)
-- Phase 6.1-6.3: Full PDF exporter implementation
+- Phase 6.0.1: ✅ COMPLETE
+- Phase 6.1-6.3: NOT STARTED (await explicit kickoff)
 
 **Trade-offs Accepted**:
-- ⚠️ Rare Chinese characters show as □ (<1% impact)
+- ⚠️ Rare Chinese characters may show as □ (<1% impact)
 - ⚠️ Build script complexity (one-time setup)
 - ✅ Reasonable bundle size
 - ✅ Good memory footprint
-- ✅ Simple runtime code
+- ✅ Searchable/selectable Chinese text verified
 
 **Alternative for v1.1** (if needed):
-- Consider runtime subsetting if library matures
-- Or expand static subset to GB18030 (21K chars, 3-4 MB)
+- Expand static subset to GB18030 (21K chars, 3-4 MB)
+- Investigate runtime subsetting if browser-side library matures
 
 ---
 
-**CJK Font Strategy Decision Review complete.**
+**CJK Font Strategy Decision Review complete. Phase 6.0.1 gate passed.**
