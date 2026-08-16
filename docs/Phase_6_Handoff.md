@@ -9,7 +9,14 @@
 - Phase 5: COMPLETE
 - Structured Content Compatibility Patch: COMPLETE
 - Phase 6 PDF Exporter Design Review: COMPLETE
-- Phase 6 Implementation: NOT STARTED
+- Phase 6.0.1 jsPDF Feasibility: COMPLETE
+- Phase 6.1.1 PDF Core Foundation: COMPLETE
+- Phase 6.1.2-A PDF Structured Content Rendering: COMPLETE
+- Phase 6.1.2-B1 Table Rendering: COMPLETE
+- Phase 6.1.2-B2: NOT STARTED
+- Phase 6 Integration (Preview / Download / Popup / Template): NOT STARTED
+
+Progress archive: `Phase_6_PDF_Implementation_Progress_Archive.md`
 
 ## 2. Phase 6 Design Decision
 
@@ -42,39 +49,28 @@ Conversation
 
 ## 4. Next Step
 
-The next step is **not** Phase 6.1.
+Phase 6.0.1 jsPDF Feasibility Gate: **COMPLETE**.
 
-The next step must be:
+Phase 6.1.1 PDF Core Foundation: **COMPLETE**.
 
-```text
-Phase 6.0 PDF Engine & Font Feasibility Gate
-```
+Phase 6.1.2-A PDF Structured Content Rendering: **COMPLETE**.
 
-The gate validates only:
+Phase 6.1.2-B1 Table Rendering: **COMPLETE**.
 
-- exact pdfmake version;
-- Manifest V3 build and CSP compatibility;
-- local CJK font registration;
-- Chinese, English, and Unicode output;
-- searchable/selectable PDF text;
-- `Uint8Array` generation;
-- Blob open;
-- zero network requests;
-- bundle-size delta.
+The next step is **not** Phase 6.1.2-B2 until explicitly authorized.
 
-The gate must not implement:
+Remaining PDF exporter work not yet started:
 
-- Popup;
-- Preview product flow;
-- full block renderer;
-- tables;
-- a math rendering engine;
-- image fetching;
-- template UI;
-- partial-message selection;
-- Phase 6.1.
+- Phase 6.1.2-B2
+- Image block rendering
+- Math block rendering
+- Unknown block rendering
+- Preview
+- Download
+- Popup integration
+- Default / Dark template system
 
-Only a documented Gate PASS permits work to begin on Phase 6.1.
+See `Phase_6_PDF_Implementation_Progress_Archive.md` for completed milestone details and validation results.
 
 ## 5. Scope Restrictions
 
@@ -153,9 +149,21 @@ The Gate report must clearly distinguish automated results from real Chrome evid
 Phase 6 Design Review:
 COMPLETE
 
-Phase 6.0 Feasibility Gate:
+Phase 6.0.1 jsPDF Feasibility Gate:
+COMPLETE
+
+Phase 6.1.1 PDF Core Foundation:
+COMPLETE
+
+Phase 6.1.2-A PDF Structured Content Rendering:
+COMPLETE
+
+Phase 6.1.2-B1 Table Rendering:
+COMPLETE
+
+Phase 6.1.2-B2:
 NOT STARTED
 
-Phase 6 Implementation:
+Phase 6 Integration (Preview / Download / Popup / Template):
 NOT STARTED
 ```

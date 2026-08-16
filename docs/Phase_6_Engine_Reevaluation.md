@@ -1388,7 +1388,12 @@ Phase 6.0.1 Feasibility Gate **PASSED** (2026-08-16).
 3. ~~Validate jsPDF in real Chrome MV3 Extension~~ ✅ Done
 4. ~~Test CJK font embedding~~ ✅ Done (Full TTF + TTF subset)
 5. ~~Measure bundle size~~ ✅ Done
-6. **Phase 6.1**: jsPDF-based PDF Core — **NOT STARTED** (await explicit kickoff)
+6. ~~**Phase 6.1**: jsPDF-based PDF Core~~ ✅ Phase 6.1.1 COMPLETE
+7. ~~**Phase 6.1.2-A**: Structured content rendering~~ ✅ COMPLETE
+8. ~~**Phase 6.1.2-B1**: Table rendering~~ ✅ COMPLETE
+9. **Phase 6.1.2-B2**: NOT STARTED (await explicit kickoff)
+
+Progress archive: `Phase_6_PDF_Implementation_Progress_Archive.md`
 
 ### Implementation Plan (After Gate Passes)
 
@@ -1452,7 +1457,19 @@ Final CJK Strategy:
 Phase 6.0.1 jsPDF Feasibility Gate:
   ✅ COMPLETE
 
-Phase 6.1 PDF Exporter Implementation:
+Phase 6.1.1 PDF Core Foundation:
+  ✅ COMPLETE
+
+Phase 6.1.2-A PDF Structured Content Rendering:
+  ✅ COMPLETE
+
+Phase 6.1.2-B1 Table Rendering:
+  ✅ COMPLETE
+
+Phase 6.1.2-B2:
+  ⏳ NOT STARTED
+
+Phase 6 Integration (Preview / Download / Popup / Template):
   ⏳ NOT STARTED
 ```
 
@@ -1466,4 +1483,4 @@ Phase 6.1 PDF Exporter Implementation:
 
 ---
 
-**Phase 6 PDF Engine Re-evaluation complete. Phase 6.0.1 gate passed. Phase 6.1 not started.**
+**Phase 6 PDF Engine Re-evaluation complete. Phase 6.0.1 gate passed. Phase 6.1.1, 6.1.2-A, and 6.1.2-B1 complete. Phase 6.1.2-B2 not started.**

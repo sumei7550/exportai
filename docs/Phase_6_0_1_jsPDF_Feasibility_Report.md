@@ -638,7 +638,16 @@ Real Chrome Test B2 (TTF Subset):
 Phase 6.0.1 Final Gate:
   ✅ COMPLETE
 
-Phase 6.1:
+Phase 6.1.1 PDF Core Foundation:
+  ✅ COMPLETE
+
+Phase 6.1.2-A PDF Structured Content Rendering:
+  ✅ COMPLETE
+
+Phase 6.1.2-B1 Table Rendering:
+  ✅ COMPLETE
+
+Phase 6.1.2-B2:
   ⏳ NOT STARTED
 ```
 
@@ -650,6 +659,8 @@ Phase 6.1:
 
 **Final Engine Decision**: jsPDF approved; pdfmake@0.3.11 rejected.
 
-**Next milestone**: Phase 6.1 PDF Exporter Implementation — **NOT STARTED** (await explicit kickoff).
+**Next milestone**: Phase 6.1.2-B2 — **NOT STARTED** (await explicit kickoff).
 
-**Full documentation**: This file + `Phase_6_0_1_CJK_Strategy_Review.md` + `Phase_6_Engine_Reevaluation.md`
+**Progress archive**: `Phase_6_PDF_Implementation_Progress_Archive.md`
+
+**Full documentation**: This file + `Phase_6_0_1_CJK_Strategy_Review.md` + `Phase_6_Engine_Reevaluation.md` + `Phase_6_PDF_Implementation_Progress_Archive.md`

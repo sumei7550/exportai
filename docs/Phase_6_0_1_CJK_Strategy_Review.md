@@ -719,7 +719,16 @@ CJK Strategy:
 Phase 6.0.1 Gate:
   ✅ COMPLETE
 
-Phase 6.1:
+Phase 6.1.1 PDF Core Foundation:
+  ✅ COMPLETE
+
+Phase 6.1.2-A PDF Structured Content Rendering:
+  ✅ COMPLETE
+
+Phase 6.1.2-B1 Table Rendering:
+  ✅ COMPLETE
+
+Phase 6.1.2-B2:
   ⏳ NOT STARTED
 ```
 
@@ -745,7 +754,13 @@ Phase 6.1:
 
 **Implementation Timeline**:
 - Phase 6.0.1: ✅ COMPLETE
-- Phase 6.1-6.3: NOT STARTED (await explicit kickoff)
+- Phase 6.1.1 PDF Core Foundation: ✅ COMPLETE
+- Phase 6.1.2-A PDF Structured Content Rendering: ✅ COMPLETE
+- Phase 6.1.2-B1 Table Rendering: ✅ COMPLETE
+- Phase 6.1.2-B2: NOT STARTED (await explicit kickoff)
+- Phase 6 Integration (Preview / Download / Popup / Template): NOT STARTED
+
+Progress archive: `Phase_6_PDF_Implementation_Progress_Archive.md`
 
 **Trade-offs Accepted**:
 - ⚠️ Rare Chinese characters may show as □ (<1% impact)
