@@ -33,6 +33,100 @@ function createBasicConversationFixture(): Conversation {
   };
 }
 
+function createStructuredConversationFixture(): Conversation {
+  const fixture = createConversationFixture();
+  return {
+    ...fixture,
+    title: "Structured PDF fixture",
+    messages: [
+      {
+        id: "message-user-001",
+        role: "user",
+        order: 0,
+        originalText: "Structured content sample",
+        blocks: [
+          {
+            id: "block-inline-001",
+            type: "paragraph",
+            content: [
+              { text: "Plain " },
+              { text: "bold", bold: true },
+              { text: " " },
+              { text: "italic", italic: true },
+              { text: " " },
+              { text: "strike", strikethrough: true },
+              { text: " " },
+              { text: "code", code: true },
+              { text: " " },
+              { text: "link", href: "https://example.com" },
+            ],
+          },
+          { id: "block-heading-001", type: "heading", level: 1, content: [{ text: "Heading One" }] },
+          { id: "block-heading-002", type: "heading", level: 2, content: [{ text: "Heading Two" }] },
+          { id: "block-heading-003", type: "heading", level: 3, content: [{ text: "Heading Three" }] },
+          { id: "block-heading-004", type: "heading", level: 4, content: [{ text: "Heading Four" }] },
+          { id: "block-heading-005", type: "heading", level: 5, content: [{ text: "Heading Five" }] },
+          { id: "block-heading-006", type: "heading", level: 6, content: [{ text: "Heading Six" }] },
+          {
+            id: "block-code-001",
+            type: "code",
+            language: "ts",
+            code: "const first = true;\nconst second = false;",
+          },
+          {
+            id: "block-list-unordered-001",
+            type: "list",
+            ordered: false,
+            items: [{ id: "list-item-001", content: [{ text: "Unordered item" }] }],
+          },
+          {
+            id: "block-list-ordered-001",
+            type: "list",
+            ordered: true,
+            items: [{ id: "list-item-002", content: [{ text: "Ordered item" }] }],
+          },
+          {
+            id: "block-list-nested-001",
+            type: "list",
+            ordered: false,
+            items: [
+              {
+                id: "list-item-003",
+                content: [{ text: "Parent item" }],
+                children: {
+                  id: "block-list-nested-child-001",
+                  type: "list",
+                  ordered: true,
+                  items: [{ id: "list-item-004", content: [{ text: "Nested child", bold: true }] }],
+                },
+              },
+            ],
+          },
+          {
+            id: "block-quote-001",
+            type: "quote",
+            blocks: [
+              {
+                id: "block-quote-paragraph-001",
+                type: "paragraph",
+                content: [{ text: "Quoted text" }],
+              },
+              {
+                id: "block-quote-nested-001",
+                type: "quote",
+                blocks: [{ id: "block-quote-nested-paragraph-001", type: "paragraph", content: [{ text: "Nested quote" }] }],
+              },
+            ],
+          },
+          { id: "block-break-001", type: "thematic-break" },
+        ],
+        metadata: {},
+      },
+    ],
+    metadata: { ...fixture.metadata, messageCount: 1 },
+  };
+}
+
 describe("PDF Exporter Core", () => {
   it("exports a basic conversation with title, metadata, and paragraph/text content", () => {
     const conversation = createBasicConversationFixture();
@@ -53,8 +147,14 @@ describe("PDF Exporter Core", () => {
     expect(plan.title).toBe("ExportAI PDF fixture");
     expect(plan.metadata).toEqual({ platform: "chatgpt", model: "example-model" });
     expect(plan.messages).toEqual([
-      { role: "user", text: "Hello ExportAI" },
-      { role: "assistant", text: "你好，世界" },
+      {
+        role: "user",
+        blocks: [{ type: "paragraph", content: [{ text: "Hello ExportAI" }] }],
+      },
+      {
+        role: "assistant",
+        blocks: [{ type: "text", content: [{ text: "你好，世界" }] }],
+      },
     ]);
   });
 
@@ -89,6 +189,116 @@ describe("PDF Exporter Core", () => {
     Reflect.deleteProperty(conversation, "id");
 
     expect(exportConversationToPdf(conversation)).toEqual({ status: "error", code: "INVALID_CONVERSATION" });
+  });
+});
+
+describe("PDF Structured Content Rendering", () => {
+  it("maps inline styles into the document plan", () => {
+    const plan = createPdfDocumentPlan(createStructuredConversationFixture());
+    const blocks = plan.messages[0]?.blocks ?? [];
+
+    expect(blocks[0]).toEqual({
+      type: "paragraph",
+      content: [
+        { text: "Plain " },
+        { text: "bold", bold: true },
+        { text: " " },
+        { text: "italic", italic: true },
+        { text: " " },
+        { text: "strike", strikethrough: true },
+        { text: " " },
+        { text: "code", code: true },
+        { text: " " },
+        { text: "link", href: "https://example.com/" },
+      ],
+    });
+  });
+
+  it("maps heading levels 1 through 6", () => {
+    const plan = createPdfDocumentPlan(createStructuredConversationFixture());
+    const blocks = plan.messages[0]?.blocks ?? [];
+
+    expect(blocks.slice(1, 7)).toEqual([
+      { type: "heading", level: 1, content: [{ text: "Heading One" }] },
+      { type: "heading", level: 2, content: [{ text: "Heading Two" }] },
+      { type: "heading", level: 3, content: [{ text: "Heading Three" }] },
+      { type: "heading", level: 4, content: [{ text: "Heading Four" }] },
+      { type: "heading", level: 5, content: [{ text: "Heading Five" }] },
+      { type: "heading", level: 6, content: [{ text: "Heading Six" }] },
+    ]);
+  });
+
+  it("maps code blocks with language and preserved newlines", () => {
+    const plan = createPdfDocumentPlan(createStructuredConversationFixture());
+    const codeBlock = plan.messages[0]?.blocks.find((block) => block.type === "code");
+
+    expect(codeBlock).toEqual({
+      type: "code",
+      language: "ts",
+      code: "const first = true;\nconst second = false;",
+    });
+  });
+
+  it("maps ordered, unordered, and nested lists", () => {
+    const plan = createPdfDocumentPlan(createStructuredConversationFixture());
+    const listBlocks = plan.messages[0]?.blocks.filter((block) => block.type === "list") ?? [];
+
+    expect(listBlocks[0]).toEqual({
+      type: "list",
+      ordered: false,
+      items: [{ content: [{ text: "Unordered item" }] }],
+    });
+    expect(listBlocks[1]).toEqual({
+      type: "list",
+      ordered: true,
+      items: [{ content: [{ text: "Ordered item" }] }],
+    });
+    expect(listBlocks[2]).toEqual({
+      type: "list",
+      ordered: false,
+      items: [
+        {
+          content: [{ text: "Parent item" }],
+          children: {
+            ordered: true,
+            items: [{ content: [{ text: "Nested child", bold: true }] }],
+          },
+        },
+      ],
+    });
+  });
+
+  it("maps nested quote blocks", () => {
+    const plan = createPdfDocumentPlan(createStructuredConversationFixture());
+    const quoteBlock = plan.messages[0]?.blocks.find((block) => block.type === "quote");
+
+    expect(quoteBlock).toEqual({
+      type: "quote",
+      blocks: [
+        { type: "paragraph", content: [{ text: "Quoted text" }] },
+        {
+          type: "quote",
+          blocks: [{ type: "paragraph", content: [{ text: "Nested quote" }] }],
+        },
+      ],
+    });
+  });
+
+  it("maps thematic breaks", () => {
+    const plan = createPdfDocumentPlan(createStructuredConversationFixture());
+    const breakBlock = plan.messages[0]?.blocks.find((block) => block.type === "thematic-break");
+
+    expect(breakBlock).toEqual({ type: "thematic-break" });
+  });
+
+  it("exports structured content to a valid PDF", () => {
+    const result = exportConversationToPdf(createStructuredConversationFixture());
+
+    expect(result.status).toBe("success");
+    if (result.status === "error") throw new Error(result.code);
+
+    expect(hasValidPdfSignature(result.data)).toBe(true);
+    expect(result.data.length).toBeGreaterThan(0);
   });
 });
 

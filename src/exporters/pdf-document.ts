@@ -73,6 +73,8 @@ function mapBlock(block: Block): PdfBlockPlan | null {
       return mapQuoteBlock(block.blocks);
     case "thematic-break":
       return { type: "thematic-break" };
+    default:
+      return null;
   }
 }
 
