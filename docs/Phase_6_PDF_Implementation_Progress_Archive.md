@@ -1,8 +1,8 @@
 # Phase 6 PDF Implementation Progress Archive
 
 **Project**: ExportAI  
-**Updated**: 2026-08-16  
-**Scope**: Documentation archive only. Records completion through Phase 6.1.3-C3. Settings work remains out of scope.
+**Updated**: 2026-08-17
+**Scope**: Documentation archive only. Records completion through Phase 6.4. Settings work remains out of scope.
 
 ---
 
@@ -22,6 +22,7 @@
 | Phase 6.1.3-C1 Popup PDF Export Action | COMPLETE |
 | Phase 6.1.3-C2 Full Preview + Download User Flow | COMPLETE |
 | Phase 6.1.3-C3 PDF Template Support | COMPLETE |
+| Phase 6.4 Popup Redesign + Export Flow UX | COMPLETE (Implementation) |
 
 ---
 
@@ -351,10 +352,103 @@ Validation:
 
 ---
 
+### Phase 6.4 Popup Redesign + Export Flow UX
+
+**Status**: COMPLETE (Implementation)
+
+#### Popup Homepage Redesign
+
+Completed:
+
+- Popup changed from a development test panel to a productized export entry point
+- Added ExportAI Header
+- Added AI Platform quick-entry section
+- Added More expansion for All AI Platforms
+- Added Export Format Cards
+- Removed the old Conversation status display
+
+#### Export Flow Architecture
+
+Completed:
+
+- Opening the Popup no longer parses the Conversation
+- Processing starts only after the user clicks an Export Format
+- Export Request is sent to the Content Script
+- Added page-level Processing Modal
+- Added page-level Success Modal
+- Added automatic download flow
+
+#### Platform Capability Routing
+
+Completed support for three page states:
+
+1. **Unsupported website**
+
+   Displays:
+
+   `Please use on supported AI chat websites`
+
+2. **Known AI platform but not supported**
+
+   Displays:
+
+   `{platform} export is coming soon`
+
+3. **Supported platform**
+
+   Enters the complete Export Flow.
+
+#### AI Platform Navigation
+
+Completed:
+
+- AI Platform quick-entry section
+- More expansion for All AI Platforms
+- Three-column platform list
+- Separation of platform entry points from Export Capability
+
+#### Validation
+
+| Check | Result |
+| --- | --- |
+| `npm test` | PASS |
+| `npm run typecheck` | PASS |
+| `npm run build` | PASS |
+| `git diff --check` | PASS |
+
+---
+
+## ISSUE-012 Unsupported Website Toast Lifecycle
+
+**Status**: OPEN
+
+**Problem**:
+
+The fallback toast shown on ordinary websites:
+
+`Please use on supported AI chat websites`
+
+has an automatic dismissal lifecycle issue.
+
+**Impact**:
+
+UX notification only.
+
+**Not affected**:
+
+- ChatGPT Export Flow
+- PDF/Markdown/JSON Export
+- Download
+
+**Follow-up**:
+
+Unify Toast lifecycle management.
+
+---
+
 ## 3. Not Started
 
 - Settings
-- Complete user export flow beyond the completed PDF Preview + Download flow
 
 ## 4. Not Yet Implemented (PDF Exporter)
 
@@ -368,7 +462,8 @@ The following PDF capabilities remain out of scope for the completed milestones 
 | Full Preview + Download User Flow | COMPLETE (Phase 6.1.3-C2) |
 | PDF templates | COMPLETE (Phase 6.1.3-C3) |
 | Settings | NOT IMPLEMENTED |
-| Complete user export flow | NOT IMPLEMENTED |
+| Complete user export flow | COMPLETE (Implementation) |
+| Popup Redesign + Export Flow UX | COMPLETE (Implementation) |
 
 ---
 
@@ -392,15 +487,30 @@ Exporter core remains platform-independent. Completed renderers consume only the
 
 ---
 
-## 6. Next Step
+## 6. Real Browser Validation
 
-**Phase 6.1.3-C3 PDF Template Support** — COMPLETE.
+**Status**: Pending
 
-This archive records completion through Phase 6.1.3-C3 (PDF Template Support). Settings work remains not started.
+The following real-browser scenarios still require validation:
+
+- Complete export flow on a ChatGPT page
+- Popup automatic close
+- Processing Modal
+- Success Modal
+- Ordinary website fallback
+- Unsupported AI platform notification
 
 ---
 
-## 7. Final Archive Status
+## 7. Next Step
+
+**Phase 6.4 Popup Redesign + Export Flow UX** — COMPLETE (Implementation).
+
+This archive records completion through Phase 6.4 (Popup Redesign + Export Flow UX). Settings work remains not started. Real Browser Validation remains pending.
+
+---
+
+## 8. Final Archive Status
 
 ```text
 Phase 6.0.1 jsPDF Feasibility:
@@ -439,6 +549,12 @@ Phase 6.1.3-C2 Full Preview + Download User Flow:
 Phase 6.1.3-C3 PDF Template Support:
   COMPLETE
 
-Settings / Complete user export flow beyond PDF Preview + Download:
+Phase 6.4 Popup Redesign + Export Flow UX:
+  COMPLETE (Implementation)
+
+Real Browser Validation:
+  PENDING
+
+Settings:
   NOT STARTED
 ```
