@@ -4,7 +4,7 @@ import type { Conversation } from "../types/conversation";
 import { saveJsonFile } from "../exporters/json-download-service";
 import { saveMarkdownFile } from "../exporters/markdown-download-service";
 import { exportPdfFromPopup, type PopupPdfExportResult } from "./pdf-export-action";
-import { createPdfPreview } from "../preview/pdf-preview";
+import { createPdfPreview, PdfPreviewPage } from "../preview/pdf-preview";
 import { exportConversationToPdf } from "../exporters/pdf-exporter";
 import { exportJsonFromPopup, type PopupJsonExportResult } from "./json-export-action";
 import { exportMarkdownFromPopup, type PopupMarkdownExportResult } from "./markdown-export-action";
@@ -28,14 +28,6 @@ export function PopupApp() {
   const [markdownExport, setMarkdownExport] = useState<"idle" | "exporting" | PopupMarkdownExportResult>("idle");
   const [jsonExport, setJsonExport] = useState<"idle" | "exporting" | PopupJsonExportResult>("idle");
   const [pdfExport, setPdfExport] = useState<"idle" | "generating" | PopupPdfExportResult>("idle");
-
-  useEffect(() => {
-    return () => {
-      if (typeof pdfExport === "object" && pdfExport.status === "success") {
-        pdfExport.preview.cleanup();
-      }
-    };
-  }, [pdfExport]);
 
   useEffect(() => {
     void loadConversation();
@@ -190,7 +182,13 @@ export function PopupApp() {
           {typeof pdfExport === "object" && pdfExport.status === "success" && (
             <>
               <p className="mt-3 text-sm text-emerald-700" role="status">PDF preview ready: {pdfExport.filename}</p>
-              <iframe className="mt-4 h-64 w-full border-0" title="PDF preview" src={pdfExport.preview.objectUrl} />
+              <div className="mt-4 h-64 overflow-auto">
+                <PdfPreviewPage
+                  filename={pdfExport.filename}
+                  pdfBytes={pdfExport.pdfBytes}
+                  resource={pdfExport.preview}
+                />
+              </div>
             </>
           )}
           {typeof pdfExport === "object" && pdfExport.status === "error" && (

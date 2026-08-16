@@ -1,13 +1,24 @@
 // @vitest-environment jsdom
 
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { act } from "react";
+import { createElement } from "react";
+import { createRoot, type Root } from "react-dom/client";
 import {
   createPdfPreview,
   createPdfPreviewBlob,
   createPdfPreviewResource,
+  PdfPreviewPage,
 } from "../preview/pdf-preview";
 
-afterEach(() => {
+(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+
+let root: Root | undefined;
+
+afterEach(async () => {
+  await act(async () => root?.unmount());
+  root = undefined;
+  document.body.replaceChildren();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
@@ -76,5 +87,66 @@ describe("PDF Preview Flow", () => {
       status: "error",
       code: "PDF_PREVIEW_FAILED",
     });
+  });
+
+  it("shows the download entry and calls the existing Download Service", async () => {
+    let resolveDownload: (() => void) | undefined;
+    const download = vi.fn(() => new Promise<void>((resolve) => {
+      resolveDownload = resolve;
+    }));
+    const resource = {
+      blob: new Blob(["%PDF-1.7"]),
+      objectUrl: "blob:preview-flow",
+      cleanup: vi.fn(),
+    };
+    const container = document.createElement("div");
+    document.body.append(container);
+    root = createRoot(container);
+
+    await act(async () => {
+      root?.render(createElement(PdfPreviewPage, { pdfBytes: new Uint8Array([1, 2]), filename: "conversation.pdf", resource, download }));
+    });
+
+    const button = container.querySelector("button");
+    expect(button?.textContent).toBe("Download PDF");
+
+    await act(async () => {
+      button?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      await Promise.resolve();
+    });
+
+    expect(download).toHaveBeenCalledWith({ pdfBytes: new Uint8Array([1, 2]), filename: "conversation.pdf" });
+    expect(button?.textContent).toBe("Downloading PDF…");
+
+    await act(async () => {
+      resolveDownload?.();
+      await Promise.resolve();
+    });
+
+    expect(container.querySelector('[role="status"]')?.textContent).toBe("PDF download started: conversation.pdf");
+  });
+
+  it("reports download failures and cleans the preview resource on unmount", async () => {
+    const download = vi.fn().mockRejectedValue(new Error("download blocked"));
+    const resource = {
+      blob: new Blob(["%PDF-1.7"]),
+      objectUrl: "blob:preview-failure",
+      cleanup: vi.fn(),
+    };
+    const container = document.createElement("div");
+    document.body.append(container);
+    root = createRoot(container);
+
+    await act(async () => {
+      root?.render(createElement(PdfPreviewPage, { pdfBytes: new Uint8Array([1]), filename: "conversation.pdf", resource, download }));
+    });
+    await act(async () => {
+      container.querySelector("button")?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      await Promise.resolve();
+    });
+
+    expect(container.querySelector('[role="alert"]')?.textContent).toBe("Unable to download this PDF.");
+    await act(async () => root?.unmount());
+    expect(resource.cleanup).toHaveBeenCalledOnce();
   });
 });
