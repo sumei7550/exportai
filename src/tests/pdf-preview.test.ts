@@ -115,7 +115,7 @@ describe("PDF Preview Flow", () => {
       await Promise.resolve();
     });
 
-    expect(download).toHaveBeenCalledWith({ pdfBytes: new Uint8Array([1, 2]), filename: "conversation.pdf" });
+    expect(download).toHaveBeenCalledWith({ pdfBytes: new Uint8Array([1, 2]), filename: "conversation.pdf", template: "default" });
     expect(button?.textContent).toBe("Downloading PDF…");
 
     await act(async () => {
@@ -124,6 +124,27 @@ describe("PDF Preview Flow", () => {
     });
 
     expect(container.querySelector('[role="status"]')?.textContent).toBe("PDF download started: conversation.pdf");
+  });
+
+  it("uses the selected template for both preview and download", async () => {
+    const download = vi.fn().mockResolvedValue(undefined);
+    const resource = { blob: new Blob(["%PDF-1.7"]), objectUrl: "blob:dark", cleanup: vi.fn() };
+    const container = document.createElement("div");
+    document.body.append(container);
+    root = createRoot(container);
+
+    await act(async () => {
+      root?.render(createElement(PdfPreviewPage, {
+        pdfBytes: new Uint8Array([1]), filename: "dark.pdf", resource, template: "dark", download,
+      }));
+    });
+    expect(container.querySelector("iframe")?.getAttribute("src")).toBe("blob:dark");
+
+    await act(async () => {
+      container.querySelector("button")?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      await Promise.resolve();
+    });
+    expect(download).toHaveBeenCalledWith({ pdfBytes: new Uint8Array([1]), filename: "dark.pdf", template: "dark" });
   });
 
   it("reports download failures and cleans the preview resource on unmount", async () => {

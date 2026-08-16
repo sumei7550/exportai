@@ -18,7 +18,6 @@ import {
   advanceY,
   ensureSpace,
   getLineHeight,
-  setBodyTextColor,
 } from "./pdf-layout";
 import autoTable from "jspdf-autotable";
 import { renderInlineContent, renderPlainText } from "./pdf-inline-renderer";
@@ -138,8 +137,8 @@ function renderImageFallback(
     .join(" - ");
   const lineHeight = getLineHeight(METADATA_FONT_SIZE);
   ensureSpace(state, lineHeight * 2);
-  state.doc.setDrawColor(180, 180, 180);
-  state.doc.setFillColor(248, 248, 248);
+  state.doc.setDrawColor(...state.template.border);
+  state.doc.setFillColor(...state.template.surface);
   state.doc.rect(x, state.y - METADATA_FONT_SIZE * 0.35, maxWidth, lineHeight * 2, "FD");
   renderPlainText(state, fallback, x + 2, maxWidth - 4, METADATA_FONT_SIZE);
 }
@@ -177,17 +176,17 @@ function renderTableBlock(
       cellPadding: 2,
       overflow: "linebreak",
       valign: "top",
-      textColor: [0, 0, 0],
-      lineColor: [190, 190, 190],
+      textColor: state.template.text,
+      lineColor: state.template.border,
       lineWidth: 0.2,
     },
     headStyles: {
       font: FONT_FAMILY,
       fontStyle: "bold",
-      fillColor: [238, 242, 247],
-      textColor: [0, 0, 0],
+      fillColor: state.template.tableHeader,
+      textColor: state.template.text,
     },
-    alternateRowStyles: { fillColor: [250, 250, 250] },
+    alternateRowStyles: { fillColor: state.template.tableAlternate },
   });
 
   const finalY = (state.doc as AutoTableDocument).lastAutoTable?.finalY;
@@ -233,7 +232,7 @@ function renderCodeBlock(
   ensureSpace(state, blockHeight);
 
   const backgroundTop = state.y - fontSize * 0.35;
-  state.doc.setFillColor(245, 245, 245);
+  state.doc.setFillColor(...state.template.codeBackground);
   state.doc.rect(x, backgroundTop, maxWidth, blockHeight, "F");
 
   let cursorX = x + CODE_PADDING_MM;
@@ -242,14 +241,14 @@ function renderCodeBlock(
   if (languageLabel) {
     state.doc.setFont(FONT_FAMILY, "normal");
     state.doc.setFontSize(METADATA_FONT_SIZE);
-    setBodyTextColor(state.doc);
+    state.doc.setTextColor(...state.template.text);
     state.doc.text(languageLabel, cursorX, cursorY);
     cursorY += labelHeight;
   }
 
   state.doc.setFont(CODE_FONT, "normal");
   state.doc.setFontSize(fontSize);
-  setBodyTextColor(state.doc);
+  state.doc.setTextColor(...state.template.text);
 
   for (const line of codeLines) {
     const wrappedLines = state.doc.splitTextToSize(line, textWidth);
@@ -294,7 +293,7 @@ function renderListBlock(
     const marker = ordered ? `${index + 1}.` : "•";
     state.doc.setFont(FONT_FAMILY, "normal");
     state.doc.setFontSize(BODY_FONT_SIZE);
-    setBodyTextColor(state.doc);
+    state.doc.setTextColor(...state.template.text);
     state.doc.text(marker, indent, state.y);
 
     const itemStartY = state.y;
@@ -335,7 +334,7 @@ function renderQuoteBlock(
   const endY = state.y;
   const borderHeight = Math.max(endY - startY, getLineHeight(BODY_FONT_SIZE));
 
-  state.doc.setDrawColor(180, 180, 180);
+  state.doc.setDrawColor(...state.template.border);
   state.doc.setLineWidth(QUOTE_BORDER_MM);
   state.doc.line(borderX, startY - BODY_FONT_SIZE * 0.25, borderX, startY - BODY_FONT_SIZE * 0.25 + borderHeight);
 }

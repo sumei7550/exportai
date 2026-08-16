@@ -5,10 +5,11 @@ import { createPdfFilename } from "./pdf-filename";
 import type { PdfExportResult } from "./pdf-types";
 import { PDF_MIME_TYPE } from "./pdf-types";
 import { isValidJsonConversation } from "./json-validator";
+import type { PdfTemplateId } from "./pdf-template";
 
 export type { PdfExportErrorCode, PdfExportResult } from "./pdf-types";
 
-export function exportConversationToPdf(conversation: Conversation): PdfExportResult {
+export function exportConversationToPdf(conversation: Conversation, template: PdfTemplateId = "default"): PdfExportResult {
   try {
     if (Array.isArray(conversation.messages) && conversation.messages.length === 0) {
       return { status: "error", code: "EMPTY_CONVERSATION" };
@@ -21,7 +22,7 @@ export function exportConversationToPdf(conversation: Conversation): PdfExportRe
   }
 
   try {
-    const plan = createPdfDocumentPlan(conversation);
+    const plan = createPdfDocumentPlan(conversation, template);
     const rendered = renderPdfDocumentPlan(plan);
     if (!rendered.hasValidSignature) {
       return { status: "error", code: "PDF_GENERATION_FAILED" };

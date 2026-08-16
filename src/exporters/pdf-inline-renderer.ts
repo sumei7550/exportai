@@ -1,4 +1,3 @@
-import type { jsPDF } from "jspdf";
 import {
   BODY_FONT_SIZE,
   CODE_FONT,
@@ -7,8 +6,6 @@ import {
   advanceY,
   ensureSpace,
   getLineHeight,
-  setBodyTextColor,
-  setLinkTextColor,
 } from "./pdf-layout";
 import type { PdfInlinePlan } from "./pdf-types";
 
@@ -86,7 +83,8 @@ function mergeAdjacentSegments(line: StyledChar[]): StyledSegment[] {
   return segments;
 }
 
-function applyInlineStyle(doc: jsPDF, style: InlineStyle, fontSize: number): void {
+function applyInlineStyle(state: PdfLayoutState, style: InlineStyle, fontSize: number): void {
+  const doc = state.doc;
   if (style.code) {
     doc.setFont(CODE_FONT, "normal");
   } else {
@@ -96,19 +94,19 @@ function applyInlineStyle(doc: jsPDF, style: InlineStyle, fontSize: number): voi
   doc.setFontSize(fontSize);
 
   if (style.href !== undefined) {
-    setLinkTextColor(doc);
+    doc.setTextColor(...state.template.link);
   } else {
-    setBodyTextColor(doc);
+    doc.setTextColor(...state.template.text);
   }
 }
 
-function measureStyledChar(doc: jsPDF, styledChar: StyledChar, fontSize: number): number {
-  applyInlineStyle(doc, styledChar.style, fontSize);
-  return doc.getTextWidth(styledChar.char);
+function measureStyledChar(state: PdfLayoutState, styledChar: StyledChar, fontSize: number): number {
+  applyInlineStyle(state, styledChar.style, fontSize);
+  return state.doc.getTextWidth(styledChar.char);
 }
 
 function layoutStyledLines(
-  doc: jsPDF,
+  state: PdfLayoutState,
   inlines: PdfInlinePlan[],
   maxWidth: number,
   fontSize: number,
@@ -129,7 +127,7 @@ function layoutStyledLines(
       continue;
     }
 
-    const charWidth = measureStyledChar(doc, styledChar, fontSize);
+    const charWidth = measureStyledChar(state, styledChar, fontSize);
 
     if (currentWidth + charWidth > maxWidth && currentLine.length > 0) {
       lines.push(currentLine);
@@ -186,13 +184,14 @@ function renderItalicSegment(
 }
 
 function renderStyledSegment(
-  doc: jsPDF,
+  state: PdfLayoutState,
   segment: StyledSegment,
   x: number,
   y: number,
   fontSize: number,
 ): number {
-  applyInlineStyle(doc, segment.style, fontSize);
+  applyInlineStyle(state, segment.style, fontSize);
+  const doc = state.doc;
 
   if (segment.style.italic) {
     renderItalicSegment(doc, segment.text, x, y, fontSize, segment.style);
@@ -214,7 +213,7 @@ function renderStyledSegment(
 }
 
 function renderStyledLine(
-  doc: jsPDF,
+  state: PdfLayoutState,
   line: StyledChar[],
   x: number,
   y: number,
@@ -224,7 +223,7 @@ function renderStyledLine(
   let cursorX = x;
 
   for (const segment of segments) {
-    cursorX += renderStyledSegment(doc, segment, cursorX, y, fontSize);
+    cursorX += renderStyledSegment(state, segment, cursorX, y, fontSize);
   }
 }
 
@@ -237,12 +236,12 @@ export function renderInlineContent(
 ): void {
   if (inlines.length === 0) return;
 
-  const lines = layoutStyledLines(state.doc, inlines, maxWidth, fontSize);
+  const lines = layoutStyledLines(state, inlines, maxWidth, fontSize);
   const lineHeight = getLineHeight(fontSize);
 
   for (const line of lines) {
     ensureSpace(state, lineHeight);
-    renderStyledLine(state.doc, line, x, state.y, fontSize);
+    renderStyledLine(state, line, x, state.y, fontSize);
     advanceY(state, lineHeight);
   }
 }
@@ -257,7 +256,7 @@ export function renderPlainText(
 ): void {
   state.doc.setFont(FONT_FAMILY, fontStyle);
   state.doc.setFontSize(fontSize);
-  setBodyTextColor(state.doc);
+  state.doc.setTextColor(...state.template.text);
 
   const lineHeight = getLineHeight(fontSize);
   const lines = state.doc.splitTextToSize(text, maxWidth);
@@ -268,3 +267,6 @@ export function renderPlainText(
     advanceY(state, lineHeight);
   }
 }
+
+
+import type { jsPDF } from "jspdf";

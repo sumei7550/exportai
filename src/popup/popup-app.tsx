@@ -6,6 +6,7 @@ import { saveMarkdownFile } from "../exporters/markdown-download-service";
 import { exportPdfFromPopup, type PopupPdfExportResult } from "./pdf-export-action";
 import { createPdfPreview, PdfPreviewPage } from "../preview/pdf-preview";
 import { exportConversationToPdf } from "../exporters/pdf-exporter";
+import type { PdfTemplateId } from "../exporters/pdf-template";
 import { exportJsonFromPopup, type PopupJsonExportResult } from "./json-export-action";
 import { exportMarkdownFromPopup, type PopupMarkdownExportResult } from "./markdown-export-action";
 import {
@@ -28,6 +29,7 @@ export function PopupApp() {
   const [markdownExport, setMarkdownExport] = useState<"idle" | "exporting" | PopupMarkdownExportResult>("idle");
   const [jsonExport, setJsonExport] = useState<"idle" | "exporting" | PopupJsonExportResult>("idle");
   const [pdfExport, setPdfExport] = useState<"idle" | "generating" | PopupPdfExportResult>("idle");
+  const [pdfTemplate, setPdfTemplate] = useState<PdfTemplateId>("default");
 
   useEffect(() => {
     void loadConversation();
@@ -98,7 +100,7 @@ export function PopupApp() {
 
   async function handlePdfExport(conversation: Conversation) {
     setPdfExport("generating");
-    setPdfExport(await exportPdfFromPopup(conversation, exportConversationToPdf, createPdfPreview));
+    setPdfExport(await exportPdfFromPopup(conversation, exportConversationToPdf, createPdfPreview, pdfTemplate));
   }
 
   function platformRow(status: PageStatus) {
@@ -167,6 +169,13 @@ export function PopupApp() {
           >
             {pdfExport === "generating" ? "Generating PDF..." : "Export PDF"}
           </button>
+          <label className="ml-2 text-sm text-slate-600">
+            Template
+            <select className="ml-1 rounded border border-slate-300 px-1 py-1" value={pdfTemplate} onChange={(event) => setPdfTemplate(event.target.value as PdfTemplateId)}>
+              <option value="default">Default</option>
+              <option value="dark">Dark</option>
+            </select>
+          </label>
           {typeof markdownExport === "object" && markdownExport.status === "success" && (
             <p className="mt-3 text-sm text-emerald-700" role="status">Markdown download started: {markdownExport.filename}</p>
           )}
@@ -187,6 +196,7 @@ export function PopupApp() {
                   filename={pdfExport.filename}
                   pdfBytes={pdfExport.pdfBytes}
                   resource={pdfExport.preview}
+                  template={pdfTemplate}
                 />
               </div>
             </>

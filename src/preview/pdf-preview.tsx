@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { savePdfFile } from "../exporters/pdf-download-service";
 import { PDF_MIME_TYPE } from "../exporters/pdf-types";
+import type { PdfTemplateId } from "../exporters/pdf-template";
 
 export type PdfPreviewErrorCode = "PDF_PREVIEW_FAILED";
 export type PdfPreviewDownloadErrorCode = "PDF_DOWNLOAD_FAILED";
@@ -54,6 +55,7 @@ export interface PdfPreviewPageProps {
   pdfBytes: Uint8Array;
   filename: string;
   resource?: PdfPreviewResource;
+  template?: PdfTemplateId;
   download?: PdfDownloadFunction;
 }
 
@@ -64,13 +66,13 @@ type PdfPreviewPageState =
   | { status: "success"; objectUrl: string }
   | { status: "error"; objectUrl?: string; code: PdfPreviewErrorCode | PdfPreviewDownloadErrorCode };
 
-export type PdfDownloadFunction = (request: { pdfBytes: Uint8Array; filename: string }) => Promise<void>;
+export type PdfDownloadFunction = (request: { pdfBytes: Uint8Array; filename: string; template: PdfTemplateId }) => Promise<void>;
 
 /**
  * PDF Preview page. Preview owns confirmation and state, while Download Service
  * owns the browser-specific local save operation.
  */
-export function PdfPreviewPage({ pdfBytes, filename, resource, download = savePdfFile }: PdfPreviewPageProps) {
+export function PdfPreviewPage({ pdfBytes, filename, resource, template = "default", download = savePdfFile }: PdfPreviewPageProps) {
   const [state, setState] = useState<PdfPreviewPageState>({ status: "loading" });
 
   useEffect(() => {
@@ -90,7 +92,7 @@ export function PdfPreviewPage({ pdfBytes, filename, resource, download = savePd
 
     setState({ status: "downloading", objectUrl: state.objectUrl });
     try {
-      await download({ pdfBytes, filename });
+      await download({ pdfBytes, filename, template });
       setState({ status: "success", objectUrl: state.objectUrl });
     } catch {
       setState({ status: "error", objectUrl: state.objectUrl, code: "PDF_DOWNLOAD_FAILED" });

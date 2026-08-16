@@ -27,7 +27,10 @@ export function renderPdfDocumentPlan(plan: PdfDocumentPlan): PdfEngineResult {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   registerCjkFont(doc);
 
-  const state = createLayoutState(doc);
+  const state = createLayoutState(doc, plan.template);
+  doc.setFillColor(...state.template.pageBackground);
+  doc.rect(0, 0, doc.internal.pageSize.getWidth(), state.pageHeight, "F");
+  doc.setTextColor(...state.template.text);
   state.warnings.push(...plan.warnings);
   const metadataLines = buildMetadataLines(plan);
 

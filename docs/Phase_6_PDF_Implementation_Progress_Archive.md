@@ -2,7 +2,7 @@
 
 **Project**: ExportAI  
 **Updated**: 2026-08-16  
-**Scope**: Documentation archive only. Records completion through Phase 6.1.3-C2. Does not start Template / Settings work or modify production behavior.
+**Scope**: Documentation archive only. Records completion through Phase 6.1.3-C3. Settings work remains out of scope.
 
 ---
 
@@ -21,6 +21,7 @@
 | Phase 6.1.3-B PDF Download Flow | COMPLETE |
 | Phase 6.1.3-C1 Popup PDF Export Action | COMPLETE |
 | Phase 6.1.3-C2 Full Preview + Download User Flow | COMPLETE |
+| Phase 6.1.3-C3 PDF Template Support | COMPLETE |
 
 ---
 
@@ -328,9 +329,30 @@ Validation:
 
 ---
 
+### Phase 6.1.3-C3 PDF Template Support
+
+**Status**: COMPLETE
+
+Completed:
+
+- Default template
+- Dark template
+- Popup template selection
+- Preview and Download template consistency through the shared PDF template configuration
+
+Validation:
+
+| Check | Result |
+| --- | --- |
+| `npm test` | PASS — 164 tests passed |
+| `npm run typecheck` | PASS |
+| `npm run build` | PASS |
+| `git diff --check` | PASS |
+
+---
+
 ## 3. Not Started
 
-- Template selector
 - Settings
 - Complete user export flow beyond the completed PDF Preview + Download flow
 
@@ -343,8 +365,8 @@ The following PDF capabilities remain out of scope for the completed milestones 
 | Preview | COMPLETE (Phase 6.1.3-A) |
 | Download | COMPLETE (Phase 6.1.3-B) |
 | Popup PDF Export Action | COMPLETE (Phase 6.1.3-C1) |
-| Full Preview + Download User Flow | NOT IMPLEMENTED |
-| Template selector | NOT IMPLEMENTED |
+| Full Preview + Download User Flow | COMPLETE (Phase 6.1.3-C2) |
+| PDF templates | COMPLETE (Phase 6.1.3-C3) |
 | Settings | NOT IMPLEMENTED |
 | Complete user export flow | NOT IMPLEMENTED |
 
@@ -364,15 +386,17 @@ Unified Conversation Model
   → temporary anchor download + cleanup
 ```
 
+PDF template selection is carried through the shared `PdfDocumentPlan` and PDF engine configuration, so Preview and Download consume the same generated template output.
+
 Exporter core remains platform-independent. Completed renderers consume only the unified `Conversation` model and `PdfDocumentPlan`; they do not inspect ChatGPT, Claude, or Gemini DOM.
 
 ---
 
 ## 6. Next Step
 
-**Phase 6.1.3-C2 Full Preview + Download User Flow** — COMPLETE.
+**Phase 6.1.3-C3 PDF Template Support** — COMPLETE.
 
-This archive records completion through Phase 6.1.3-C2 (Full Preview + Download User Flow). It does not authorize Template or Settings work.
+This archive records completion through Phase 6.1.3-C3 (PDF Template Support). Settings work remains not started.
 
 ---
 
@@ -412,6 +436,9 @@ Phase 6.1.3-C1 Popup PDF Export Action:
 Phase 6.1.3-C2 Full Preview + Download User Flow:
   COMPLETE
 
-Template / Settings / Complete user export flow:
+Phase 6.1.3-C3 PDF Template Support:
+  COMPLETE
+
+Settings / Complete user export flow beyond PDF Preview + Download:
   NOT STARTED
 ```

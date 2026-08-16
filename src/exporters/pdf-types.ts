@@ -1,4 +1,5 @@
-import type { Platform } from "../types/conversation";
+import type { Platform } from "../types/conversation";
+import type { PdfTemplateId } from "./pdf-template";
 
 export const PDF_MIME_TYPE = "application/pdf" as const;
 export const PDF_EXPORTER_NAME = "ExportAI PDF Exporter" as const;
@@ -74,11 +75,14 @@ export interface PdfMessagePlan {
 }
 
 export interface PdfDocumentPlan {
-  title: string;
+  title: string;
+  template: PdfTemplateId;
   metadata: PdfDocumentMetadata;
   messages: PdfMessagePlan[];
   warnings: PdfExportWarning[];
 }
+
+export type { PdfTemplateId } from "./pdf-template";
 
 export function hasValidPdfSignature(bytes: Uint8Array): boolean {
   if (bytes.length < 5) return false;

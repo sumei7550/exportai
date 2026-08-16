@@ -1,5 +1,6 @@
 import type { jsPDF } from "jspdf";
 import type { PdfExportWarning } from "./pdf-types";
+import { getPdfTemplate, type PdfTemplateConfig, type PdfTemplateId } from "./pdf-template";
 
 export const FONT_FAMILY = "NotoSansSC";
 export const CODE_FONT = "courier";
@@ -16,7 +17,6 @@ export const QUOTE_INDENT_MM = 5;
 export const QUOTE_BORDER_MM = 1.5;
 export const CODE_PADDING_MM = 2;
 export const CODE_LINE_HEIGHT_MM = 4.5;
-export const LINK_COLOR = { r: 0, g: 51, b: 153 };
 
 export const HEADING_FONT_SIZES: Record<1 | 2 | 3 | 4 | 5 | 6, number> = {
   1: 18,
@@ -34,9 +34,10 @@ export interface PdfLayoutState {
   margin: number;
   y: number;
   warnings: PdfExportWarning[];
+  template: PdfTemplateConfig;
 }
 
-export function createLayoutState(doc: jsPDF): PdfLayoutState {
+export function createLayoutState(doc: jsPDF, template: PdfTemplateId = "default"): PdfLayoutState {
   const pageHeight = doc.internal.pageSize.getHeight();
   const pageWidth = doc.internal.pageSize.getWidth();
 
@@ -47,6 +48,7 @@ export function createLayoutState(doc: jsPDF): PdfLayoutState {
     margin: PAGE_MARGIN_MM,
     y: PAGE_MARGIN_MM,
     warnings: [],
+    template: getPdfTemplate(template),
   };
 }
 
@@ -55,7 +57,9 @@ export function ensureSpace(state: PdfLayoutState, neededHeight: number): void {
 
   state.doc.addPage();
   state.y = state.margin;
-  state.doc.setTextColor(0, 0, 0);
+  state.doc.setFillColor(...state.template.pageBackground);
+  state.doc.rect(0, 0, state.doc.internal.pageSize.getWidth(), state.pageHeight, "F");
+  state.doc.setTextColor(...state.template.text);
   state.doc.setFont(FONT_FAMILY, "normal");
 }
 
@@ -63,12 +67,12 @@ export function advanceY(state: PdfLayoutState, amount: number): void {
   state.y += amount;
 }
 
-export function setBodyTextColor(doc: jsPDF): void {
-  doc.setTextColor(0, 0, 0);
+export function setBodyTextColor(state: PdfLayoutState): void {
+  state.doc.setTextColor(...state.template.text);
 }
 
-export function setLinkTextColor(doc: jsPDF): void {
-  doc.setTextColor(LINK_COLOR.r, LINK_COLOR.g, LINK_COLOR.b);
+export function setLinkTextColor(state: PdfLayoutState): void {
+  state.doc.setTextColor(...state.template.link);
 }
 
 export function getLineHeight(fontSize: number): number {

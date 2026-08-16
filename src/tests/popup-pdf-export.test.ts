@@ -30,6 +30,22 @@ describe("Popup PDF export action", () => {
     expect(createPreview).toHaveBeenCalledWith(pdfBytes);
   });
 
+  it("propagates the selected template into PDF generation", async () => {
+    const exportPdf = vi.fn(() => ({
+      status: "success" as const,
+      data: new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d]),
+      filename: "dark.pdf",
+      mimeType: "application/pdf" as const,
+      warnings: [],
+    }));
+    const createPreview = vi.fn(() => ({ status: "success" as const, resource: preview }));
+
+    await exportPdfFromPopup(conversation, exportPdf, createPreview, "dark");
+
+    expect(exportPdf).toHaveBeenCalledWith(conversation, "dark");
+    expect(createPreview).toHaveBeenCalledWith(expect.any(Uint8Array));
+  });
+
   it.each([
     "EMPTY_CONVERSATION",
     "INVALID_CONVERSATION",

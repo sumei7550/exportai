@@ -491,3 +491,22 @@ describe("PDF filename", () => {
     expect(createPdfFilename("CON")).toBe("CON-conversation.pdf");
   });
 });
+
+describe("PDF templates", () => {
+  it("generates the default template when no option is supplied", () => {
+    const plan = createPdfDocumentPlan(createBasicConversationFixture());
+    const result = exportConversationToPdf(createBasicConversationFixture());
+
+    expect(plan.template).toBe("default");
+    expect(result.status).toBe("success");
+  });
+
+  it("generates the dark template with dark surface styling", () => {
+    const plan = createPdfDocumentPlan(createBasicConversationFixture(), "dark");
+    const result = exportConversationToPdf(createBasicConversationFixture(), "dark");
+
+    expect(plan.template).toBe("dark");
+    expect(result.status).toBe("success");
+    if (result.status === "success") expect(hasValidPdfSignature(result.data)).toBe(true);
+  });
+});

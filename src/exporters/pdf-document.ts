@@ -10,6 +10,7 @@ import type {
   PdfMessagePlan,
   PdfExportWarning,
 } from "./pdf-types";
+import type { PdfTemplateId } from "./pdf-template";
 
 const SUPPORTED_BLOCK_TYPES = new Set<Block["type"]>([
   "paragraph",
@@ -29,7 +30,7 @@ function isSupportedMessageRole(role: MessageRole): role is PdfMessagePlan["role
   return role === "user" || role === "assistant";
 }
 
-export function createPdfDocumentPlan(conversation: Conversation): PdfDocumentPlan {
+export function createPdfDocumentPlan(conversation: Conversation, template: PdfTemplateId = "default"): PdfDocumentPlan {
   const metadata: PdfDocumentMetadata = { platform: conversation.platform };
   if (conversation.model !== undefined) metadata.model = conversation.model;
 
@@ -45,6 +46,7 @@ export function createPdfDocumentPlan(conversation: Conversation): PdfDocumentPl
 
   return {
     title: conversation.title,
+    template,
     metadata,
     messages,
     warnings,
