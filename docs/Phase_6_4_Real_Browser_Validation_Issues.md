@@ -20,15 +20,15 @@ PDF 视觉精修和极端字体覆盖作为后续优化，不阻塞当前版本�
 | ID | Issue | Severity | Priority | Status |
 |----|-------|----------|----------|--------|
 | ISSUE-001 | ChatGPT 会话完整采集不稳定 | High | P0 | Implementation Complete / Validation Pending |
-| ISSUE-011 | 导出流程用户体验不足 | High | P1 | Open |
-| ISSUE-005 | Popup 首页布局与竞品差距 | Medium High | P1 | Open |
-| ISSUE-006 | Download 交互体验 | Medium | P1 | Open |
+| ISSUE-012 | Unsupported Website Toast Lifecycle | High | P1 | Open |
+| ISSUE-013 | Export Failed Error Modal Visual Polish | High | P1 | Open |
+| ISSUE-014 | Export Success Modal Visual Polish | High | P1 | Open |
+| ISSUE-015 | Real Browser Export Flow Validation | High | P1 | Pending |
 | ISSUE-002 | CJK Font Coverage | High | P2 | Next Version Optimization |
 | ISSUE-003 | PDF 排版可读性优化 | Medium High | P2 | Next Version Optimization |
 | ISSUE-004 | Dark Template 视觉优化 | Medium High | P2 | Next Version Optimization |
 | ISSUE-007 | Image 高级场景验证 | Medium | P2 | Next Version Optimization |
 | ISSUE-008 | 长 Conversation 压力测试 | Medium | P2 | Next Version Optimization |
-| ISSUE-009 | Template 视觉细节 | Medium | P2 | Next Version Optimization |
 | ISSUE-010 | 文件命名/tmp 下载细节 | Low | P2 | Next Version Optimization |
 
 
@@ -47,58 +47,116 @@ Pending
 这是所有导出的基础问题。Markdown、JSON、PDF 三种导出共享同一个 Conversation 数据源，因此必须完成 Real Browser Validation，确认不同滚动状态下都能完整、稳定地采集会话。
 
 
-## ISSUE-011: 导出流程用户体验不足
-
-Severity:
-High
+## ISSUE-012: Unsupported Website Toast Lifecycle
 
 Priority:
 P1
 
-包含：
+Status:
+OPEN
 
-- 会话采集过程页面滚动影响体验
-- 缺少 Processing Modal
-- 缺少 Loading 动画
-- 缺少处理中状态文案循环
-- 缺少 Export Success 成功反馈弹窗
+问题：
 
-目标流程：
+普通网页点击 PDF / Markdown / JSON 后，提示：
 
 ```text
-Export
-  ↓
-Processing Modal
-  ↓
-Export Success!
+Please use on supported AI chat websites
 ```
 
-Processing Modal 标题：
+出现后无法按预期自动消失。
 
-```text
-Processing, Please wait...
-```
+原因记录：
 
-Processing Modal 包含 Loading 动画，并循环展示以下状态文案：
+当前存在 Popup Notice 和 Content Script Toast 两个提示来源，需要统一 Toast 生命周期。
 
-- Working on it...
-- Longer chats may take a bit more time...
-- Formatting your content...
-- Almost there...
-- Please keep this tab open...
+影响：
 
-Success Modal：
+仅 UX。
 
-- 显示 `Export Success!`
-- 用户手动关闭
-- 支持右上角关闭按钮
-- 支持点击弹窗外区域关闭
+不影响：
 
-不包含：
+- ChatGPT Export Flow
+- Markdown Export
+- JSON Export
+- PDF Export
 
-- 评价按钮
-- Chrome Web Store 引导
-- 社交链接
+
+## ISSUE-013: Export Failed Error Modal Visual Polish
+
+Status:
+OPEN
+
+Priority:
+P1
+
+问题：
+
+ChatGPT 页面未完全加载或导出失败时显示 Error Modal。
+
+当前问题：
+
+- 样式与 Processing / Success Modal 不统一
+- 错误视觉过重
+- 布局、图标、文案层级需要优化
+
+范围：
+
+仅视觉优化。
+
+不涉及：
+
+- Conversation collection
+- Export logic
+- Error detection
+
+
+## ISSUE-014: Export Success Modal Visual Polish
+
+Status:
+OPEN
+
+Priority:
+P1
+
+问题：
+
+Export Success Modal 与竞品视觉存在差异。
+
+待优化：
+
+- 弹窗尺寸过大
+- 下载提示文案不符合预期
+- Buy me a coffee 按钮样式需要调整
+
+目标：
+
+统一 Processing / Error / Success Modal 视觉语言。
+
+
+## ISSUE-015: Real Browser Export Flow Validation
+
+Status:
+PENDING
+
+Priority:
+P1
+
+验证：
+
+ChatGPT：
+
+- Popup 自动关闭
+- Processing Modal
+- Success Modal
+- 自动下载
+
+普通网页：
+
+- `Please use on supported AI chat websites`
+
+未支持 AI 平台：
+
+- `xxx export is coming soon`
 
 
 ## P2: Next Version Optimization
@@ -132,24 +190,32 @@ Success Modal：
 
 作为下一版本优化，不阻塞当前版本。
 
-### ISSUE-009: Template 视觉细节
-
-作为下一版本优化，不阻塞当前版本。
-
 ### ISSUE-010: 文件命名/tmp 下载细节
 
 作为下一版本优化，不阻塞当前版本。
 
 
-## Current Blocking Issues
+## Current Priority
 
 P0:
 
-- ISSUE-001 ChatGPT Conversation 完整采集验证
+- ISSUE-001 ChatGPT Conversation 完整采集稳定性
 
 P1:
 
-- ISSUE-011 Export Flow UX
+- ISSUE-012 Unsupported Website Toast Lifecycle
+- ISSUE-013 Error Modal Visual Polish
+- ISSUE-014 Success Modal Visual Polish
+- ISSUE-015 Real Browser Export Flow Validation
+
+P2:
+
+- CJK Font Coverage
+- PDF Readability
+- Dark Template
+- Image
+- Long Conversation Stress Test
+- File naming/download details
 
 
 ## Validation Status
@@ -160,12 +226,16 @@ IN PROGRESS
 当前版本待完成项：
 
 - ISSUE-001 Real Browser Validation
-- ISSUE-011 Export Processing / Success UX
+- ISSUE-015 Real Browser Export Flow Validation
+- ISSUE-012 Unsupported Website Toast Lifecycle
+- ISSUE-013 Error Modal Visual Polish
+- ISSUE-014 Success Modal Visual Polish
 
 
-## Next Action
+## Next Steps
 
-1. 完成 ISSUE-001 Real Browser Validation
-2. 实现 ISSUE-011 Export Processing / Success UX
-3. 优化 Popup / Download Flow
-4. 后续处理 PDF Quality
+1. 完成 Real Browser Export Flow 验证
+2. 修复 Toast 生命周期
+3. 优化 Error / Success Modal 视觉
+4. 后续进入 PDF Quality 优化
+
