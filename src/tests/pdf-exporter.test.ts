@@ -6,6 +6,26 @@ import { hasValidPdfSignature } from "../exporters/pdf-types";
 import type { Conversation } from "../types/conversation";
 import { createConversationFixture } from "./fixtures/conversation.fixture";
 
+const PNG_DATA_URI = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
+const JPEG_DATA_URI = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////2wBDAf//////////////////////////////////////////////////////////////////////////////////////wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAX/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAH/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oACAEBAAEFAqf/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oACAEDAQE/Aaf/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oACAECAQE/Aaf/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oACAEBAAY/Aqf/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oACAEBAAE/IV//2gAMAwEAAgADAAAAEP/EABQRAQAAAAAAAAAAAAAAAAAAABD/2gAIAQMBAT8QH//EABQRAQAAAAAAAAAAAAAAAAAAABD/2gAIAQIBAT8QH//EABQQAQAAAAAAAAAAAAAAAAAAABD/2gAIAQEAAT8QH//Z";
+
+function createImageConversation(src: string, alt = "Image alt", caption?: string): Conversation {
+  const fixture = createConversationFixture();
+  return {
+    ...fixture,
+    title: "Image PDF fixture",
+    messages: [{
+      id: "image-message-001",
+      role: "assistant",
+      order: 0,
+      originalText: alt,
+      blocks: [{ id: "image-block-001", type: "image", src, alt, caption }],
+      metadata: {},
+    }],
+    metadata: { ...fixture.metadata, messageCount: 1 },
+  };
+}
+
 function createBasicConversationFixture(): Conversation {
   const fixture = createConversationFixture();
   return {
@@ -336,6 +356,66 @@ describe("PDF Structured Content Rendering", () => {
 
     expect(hasValidPdfSignature(result.data)).toBe(true);
     expect(result.data.length).toBeGreaterThan(0);
+  });
+});
+
+describe("PDF Image Rendering", () => {
+  it("embeds a PNG data URI", () => {
+    const result = exportConversationToPdf(createImageConversation(PNG_DATA_URI));
+
+    expect(result.status).toBe("success");
+    if (result.status === "error") throw new Error(result.code);
+    expect(result.warnings).toEqual([]);
+    expect(hasValidPdfSignature(result.data)).toBe(true);
+  });
+
+  it("embeds a JPEG data URI", () => {
+    const result = exportConversationToPdf(createImageConversation(JPEG_DATA_URI));
+
+    expect(result.status).toBe("success");
+    if (result.status === "error") throw new Error(result.code);
+    expect(result.warnings).toEqual([]);
+    expect(hasValidPdfSignature(result.data)).toBe(true);
+  });
+
+  it("renders alt text and caption for a broken image", () => {
+    const result = exportConversationToPdf(createImageConversation("data:image/png;base64,broken", "Fallback alt", "Fallback caption"));
+
+    expect(result.status).toBe("success");
+    if (result.status === "error") throw new Error(result.code);
+    expect(result.warnings.map((warning) => warning.code)).toContain("IMAGE_EMBED_FAILED");
+    expect(result.data.length).toBeGreaterThan(0);
+  });
+
+  it("preserves caption for an embedded image", () => {
+    const result = exportConversationToPdf(createImageConversation(PNG_DATA_URI, "Diagram", "A small diagram"));
+
+    expect(result.status).toBe("success");
+    if (result.status === "error") throw new Error(result.code);
+    expect(result.warnings).toEqual([]);
+  });
+
+  it("uses fallback text and warning for an unsafe remote URL", () => {
+    const result = exportConversationToPdf(createImageConversation("https://example.com/image.png", "Remote image"));
+
+    expect(result.status).toBe("success");
+    if (result.status === "error") throw new Error(result.code);
+    expect(result.warnings.map((warning) => warning.code)).toContain("IMAGE_UNSAFE_SOURCE");
+    expect(result.data.length).toBeGreaterThan(0);
+  });
+
+  it("keeps the PDF valid when one image fails", () => {
+    const conversation = createImageConversation("data:image/jpeg;base64,not-valid", "Broken image");
+    conversation.messages[0]!.blocks.push({
+      id: "paragraph-after-image",
+      type: "paragraph",
+      content: [{ text: "Text after broken image" }],
+    });
+
+    const result = exportConversationToPdf(conversation);
+    expect(result.status).toBe("success");
+    if (result.status === "error") throw new Error(result.code);
+    expect(hasValidPdfSignature(result.data)).toBe(true);
   });
 });
 

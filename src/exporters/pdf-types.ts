@@ -9,8 +9,8 @@ export type PdfExportErrorCode =
   | "INVALID_CONVERSATION"
   | "PDF_GENERATION_FAILED";
 
-export type PdfExportResult =
-  | { status: "success"; data: Uint8Array; filename: string; mimeType: typeof PDF_MIME_TYPE }
+export type PdfExportResult =
+  | { status: "success"; data: Uint8Array; filename: string; mimeType: typeof PDF_MIME_TYPE; warnings: PdfRenderWarning[] }
   | { status: "error"; code: PdfExportErrorCode };
 
 export interface PdfDocumentMetadata {
@@ -42,6 +42,11 @@ export interface PdfTableBlockPlan {
   rows: PdfInlinePlan[][][];
 }
 
+export interface PdfRenderWarning {
+  code: "IMAGE_UNSAFE_SOURCE" | "IMAGE_EMBED_FAILED";
+  message: string;
+}
+
 export type PdfBlockPlan =
   | { type: "text"; content: PdfInlinePlan[] }
   | { type: "paragraph"; content: PdfInlinePlan[] }
@@ -49,6 +54,7 @@ export type PdfBlockPlan =
   | { type: "code"; code: string; language?: string }
   | { type: "list"; ordered: boolean; items: PdfListItemPlan[] }
   | { type: "table"; headers: PdfInlinePlan[][]; rows: PdfInlinePlan[][][] }
+  | { type: "image"; src: string; alt: string; caption?: string }
   | { type: "quote"; blocks: PdfBlockPlan[] }
   | { type: "thematic-break" };
 
@@ -57,11 +63,12 @@ export interface PdfMessagePlan {
   blocks: PdfBlockPlan[];
 }
 
-export interface PdfDocumentPlan {
+export interface PdfDocumentPlan {
   title: string;
   metadata: PdfDocumentMetadata;
-  messages: PdfMessagePlan[];
-}
+  messages: PdfMessagePlan[];
+  warnings: PdfRenderWarning[];
+}
 
 export function hasValidPdfSignature(bytes: Uint8Array): boolean {
   if (bytes.length < 5) return false;

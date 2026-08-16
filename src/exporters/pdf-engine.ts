@@ -17,16 +17,18 @@ const ROLE_LABELS: Record<PdfDocumentPlan["messages"][number]["role"], string> =
   assistant: "Assistant",
 };
 
-export interface PdfEngineResult {
-  data: Uint8Array;
-  hasValidSignature: boolean;
+export interface PdfEngineResult {
+  data: Uint8Array;
+  hasValidSignature: boolean;
+  warnings: PdfDocumentPlan["warnings"];
 }
 
 export function renderPdfDocumentPlan(plan: PdfDocumentPlan): PdfEngineResult {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   registerCjkFont(doc);
 
-  const state = createLayoutState(doc);
+  const state = createLayoutState(doc);
+  state.warnings.push(...plan.warnings);
   const metadataLines = buildMetadataLines(plan);
 
   renderTitleAndMetadata(state, plan.title, metadataLines);
@@ -38,8 +40,8 @@ export function renderPdfDocumentPlan(plan: PdfDocumentPlan): PdfEngineResult {
   }
 
   const data = new Uint8Array(doc.output("arraybuffer"));
-  return { data, hasValidSignature: hasValidPdfSignature(data) };
-}
+  return { data, hasValidSignature: hasValidPdfSignature(data), warnings: state.warnings };
+}
 
 function registerCjkFont(doc: jsPDF): void {
   doc.addFileToVFS(FONT_FILE, NOTO_SANS_SC_SUBSET_BASE64);
@@ -48,9 +50,8 @@ function registerCjkFont(doc: jsPDF): void {
   doc.setFont(FONT_FAMILY);
 }
 
-function buildMetadataLines(plan: PdfDocumentPlan): string[] {
+function buildMetadataLines(plan: PdfDocumentPlan): string[] {
   const lines = [`Platform: ${plan.metadata.platform}`];
   if (plan.metadata.model !== undefined) lines.push(`Model: ${plan.metadata.model}`);
-  return lines;
-}
-
+  return lines;
+}

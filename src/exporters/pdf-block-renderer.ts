@@ -61,6 +61,9 @@ function renderBlock(
     case "table":
       renderTableBlock(state, block.headers, block.rows, x, maxWidth);
       return;
+    case "image":
+      renderImageBlock(state, block.src, block.alt, block.caption, x, maxWidth);
+      return;
     case "quote":
       renderQuoteBlock(state, block.blocks, x, maxWidth);
       return;
@@ -68,6 +71,73 @@ function renderBlock(
       renderThematicBreak(state, x, maxWidth);
       return;
   }
+}
+
+function renderImageBlock(
+  state: PdfLayoutState,
+  src: string,
+  alt: string,
+  caption: string | undefined,
+  x: number,
+  maxWidth: number,
+): void {
+  const format = getImageFormat(src);
+  if (format === null) {
+    renderImageFallback(state, alt, caption, x, maxWidth, "IMAGE_UNSAFE_SOURCE");
+    return;
+  }
+
+  try {
+    const properties = state.doc.getImageProperties(src);
+    const naturalWidth = Number(properties.width);
+    const naturalHeight = Number(properties.height);
+    if (!(naturalWidth > 0) || !(naturalHeight > 0)) throw new Error("Invalid image dimensions");
+
+    const width = Math.min(maxWidth, naturalWidth * 0.264583);
+    const availableHeight = state.pageHeight - state.margin * 2;
+    const height = Math.min(width * naturalHeight / naturalWidth, availableHeight);
+    const finalWidth = height === availableHeight ? height * naturalWidth / naturalHeight : width;
+    const captionHeight = caption?.trim() ? getLineHeight(METADATA_FONT_SIZE) : 0;
+    ensureSpace(state, height + captionHeight);
+    state.doc.addImage(src, format, x, state.y, finalWidth, height);
+    state.y += height;
+    if (captionHeight > 0) {
+      renderPlainText(state, caption!.trim(), x, maxWidth, METADATA_FONT_SIZE);
+    }
+  } catch {
+    renderImageFallback(state, alt, caption, x, maxWidth, "IMAGE_EMBED_FAILED");
+  }
+}
+
+function getImageFormat(src: string): "PNG" | "JPEG" | null {
+  if (/^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/i.test(src)) return "PNG";
+  if (/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/i.test(src)) return "JPEG";
+  return null;
+}
+
+function renderImageFallback(
+  state: PdfLayoutState,
+  alt: string,
+  caption: string | undefined,
+  x: number,
+  maxWidth: number,
+  code: "IMAGE_UNSAFE_SOURCE" | "IMAGE_EMBED_FAILED",
+): void {
+  if (!state.warnings.some((warning) => warning.code === code)) {
+    state.warnings.push({
+      code,
+      message: "Image could not be embedded; readable fallback text was rendered.",
+    });
+  }
+  const fallback = [alt.trim(), caption?.trim() ?? "", "[Image unavailable]"]
+    .filter((text) => text.length > 0)
+    .join(" - ");
+  const lineHeight = getLineHeight(METADATA_FONT_SIZE);
+  ensureSpace(state, lineHeight * 2);
+  state.doc.setDrawColor(180, 180, 180);
+  state.doc.setFillColor(248, 248, 248);
+  state.doc.rect(x, state.y - METADATA_FONT_SIZE * 0.35, maxWidth, lineHeight * 2, "FD");
+  renderPlainText(state, fallback, x + 2, maxWidth - 4, METADATA_FONT_SIZE);
 }
 
 function renderTableBlock(

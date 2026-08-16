@@ -32,6 +32,7 @@ export function exportConversationToPdf(conversation: Conversation): PdfExportRe
       data: rendered.data,
       filename: createPdfFilename(conversation.title),
       mimeType: PDF_MIME_TYPE,
+      warnings: rendered.warnings,
     };
   } catch {
     return { status: "error", code: "PDF_GENERATION_FAILED" };

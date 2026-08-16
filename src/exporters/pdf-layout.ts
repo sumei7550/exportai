@@ -1,4 +1,5 @@
 import type { jsPDF } from "jspdf";
+import type { PdfRenderWarning } from "./pdf-types";
 
 export const FONT_FAMILY = "NotoSansSC";
 export const CODE_FONT = "courier";
@@ -32,6 +33,7 @@ export interface PdfLayoutState {
   contentWidth: number;
   margin: number;
   y: number;
+  warnings: PdfRenderWarning[];
 }
 
 export function createLayoutState(doc: jsPDF): PdfLayoutState {
@@ -44,6 +46,7 @@ export function createLayoutState(doc: jsPDF): PdfLayoutState {
     contentWidth: pageWidth - PAGE_MARGIN_MM * 2,
     margin: PAGE_MARGIN_MM,
     y: PAGE_MARGIN_MM,
+    warnings: [],
   };
 }
 
