@@ -5,7 +5,9 @@ export const CHATGPT_DOM = {
   roleContainers: '[data-message-author-role]',
   turnRoleAttribute: "data-turn",
   roleAttribute: "data-message-author-role",
-  messageIdAttributes: ["data-message-id", "data-testid", "id"],
+  messageIdAttribute: "data-message-id",
+  conversationTurnAttributes: ["data-testid", "id"],
+  conversationTurnPattern: /^conversation-turn-(\d+)$/,
   activeTitleLinks: ['nav a[aria-current="page"][href]', 'a[aria-current="page"][href]'],
   headingTitles: ["main h1", 'header h1'],
   excludedContent: [

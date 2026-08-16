@@ -114,6 +114,57 @@ export function multiTurnFixture(): string {
   `, { title: "Multiple turns" });
 }
 
+export type ChatGPTScrollWindow = "top" | "middle" | "bottom" | "gapped-bottom";
+
+const CHATGPT_SCROLL_WINDOW_MARKUP: Record<ChatGPTScrollWindow, string> = {
+  top: `
+    <section data-testid="conversation-turn-0" data-turn="user">
+      <div data-message-author-role="user" data-message-id="scroll-u1"><p>Window message 0</p></div>
+    </section>
+    <section data-testid="conversation-turn-1" data-turn="assistant">
+      <div data-message-author-role="assistant"><p>Window message 1</p></div>
+    </section>
+    <section data-testid="conversation-turn-2" data-turn="user">
+      <div data-message-author-role="user" data-message-id="scroll-u2"><p>Window message 2</p></div>
+    </section>
+  `,
+  middle: `
+    <section data-testid="conversation-turn-2" data-turn="user">
+      <div data-message-author-role="user" data-message-id="scroll-u2"><p>Window message 2</p></div>
+    </section>
+    <section data-testid="conversation-turn-3" data-turn="assistant">
+      <div data-message-author-role="assistant"><p>Window message 3</p></div>
+    </section>
+    <section data-testid="conversation-turn-4" data-turn="user">
+      <div data-message-author-role="user" data-message-id="scroll-u3"><p>Window message 4</p></div>
+    </section>
+  `,
+  bottom: `
+    <section data-testid="conversation-turn-4" data-turn="user">
+      <div data-message-author-role="user" data-message-id="scroll-u3"><p>Window message 4</p></div>
+    </section>
+    <section data-testid="conversation-turn-5" data-turn="assistant" data-message-id="scroll-a3">
+      <div><p>Window message 5</p></div>
+    </section>
+  `,
+  "gapped-bottom": `
+    <section data-testid="conversation-turn-4" data-turn="user">
+      <div data-message-author-role="user" data-message-id="scroll-u3"><p>Window message 4</p></div>
+    </section>
+    <section data-testid="conversation-turn-6" data-turn="assistant" data-message-id="scroll-a4">
+      <div><p>Window message 6</p></div>
+    </section>
+  `,
+};
+
+export function chatGPTScrollWindowMarkup(window: ChatGPTScrollWindow): string {
+  return CHATGPT_SCROLL_WINDOW_MARKUP[window];
+}
+
+export function scrollingWindowFixture(window: ChatGPTScrollWindow): string {
+  return shell(CHATGPT_SCROLL_WINDOW_MARKUP[window], { title: "Scrolling conversation" });
+}
+
 export function nineTurnConversationFixture(): string {
   const turns = Array.from({ length: 9 }, (_, index) => {
     const turn = index + 1;

@@ -17,9 +17,14 @@ chrome.runtime.onMessage.addListener((message: ContentScriptRequest, _sender, se
     return;
   }
   if (message.type === MESSAGE_TYPE.parseConversation) {
-    sendResponse({
-      type: MESSAGE_TYPE.conversationParsed,
-      payload: chatGPTAdapter.parse(document, window.location),
+    void chatGPTAdapter.collect(document, window.location).then((payload) => {
+      sendResponse({ type: MESSAGE_TYPE.conversationParsed, payload });
+    }).catch(() => {
+      sendResponse({
+        type: MESSAGE_TYPE.conversationParsed,
+        payload: { status: "error", reason: "The ChatGPT conversation could not be collected safely." },
+      });
     });
+    return true;
   }
 });

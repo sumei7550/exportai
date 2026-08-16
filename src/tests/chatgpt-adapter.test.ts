@@ -3,6 +3,7 @@
 import { describe, expect, it } from "vitest";
 import { ChatGPTAdapter } from "../adapters/chatgpt/chatgpt-adapter";
 import { parseChatGPTBlocks } from "../adapters/chatgpt/chatgpt-block-parser";
+import type { ChatGPTScrollDriver } from "../adapters/chatgpt/chatgpt-conversation-collector";
 import type { AdapterParseResult } from "../adapters/types";
 import { exportConversationToJson } from "../exporters/json-exporter";
 import { exportConversationToMarkdown } from "../exporters/markdown-exporter";
@@ -13,6 +14,7 @@ import {
   assistantImageOnlyWithActionsFixture,
   assistantImageOnlyWithPaginationFixture,
   assistantImageTextWithPaginationFixture,
+  chatGPTScrollWindowMarkup,
   emptyConversationFixture,
   legitimatePaginationTextFixture,
   missingTitleFixture,
@@ -20,7 +22,9 @@ import {
   nineTurnConversationFixture,
   richContentFixture,
   singleTurnFixture,
+  scrollingWindowFixture,
   structuredCompatibilityFixture,
+  type ChatGPTScrollWindow,
   unknownNodeFixture,
 } from "./fixtures/chatgpt-dom.fixture";
 
@@ -44,6 +48,35 @@ function structuredConversation(): Conversation {
 
 function structuredBlocks(): Block[] {
   return structuredConversation().messages[1].blocks;
+}
+
+function windowForTop(top: number, bottomWindow: ChatGPTScrollWindow): ChatGPTScrollWindow {
+  if (top <= 0) return "top";
+  if (top < 900) return "middle";
+  return bottomWindow;
+}
+
+function scrollDriverFor(
+  document: Document,
+  initialTop: number,
+  bottomWindow: ChatGPTScrollWindow = "bottom",
+): { driver: ChatGPTScrollDriver; top: () => number } {
+  const container = document.querySelector("main");
+  if (!(container instanceof HTMLElement)) throw new Error("Expected fixture main element");
+  let top = initialTop;
+  const render = (): void => {
+    container.innerHTML = chatGPTScrollWindowMarkup(windowForTop(top, bottomWindow));
+  };
+  const driver: ChatGPTScrollDriver = {
+    findContainer: () => container,
+    readState: () => ({ top, max: 1_200, viewport: 600 }),
+    scrollTo: (_container, nextTop) => {
+      top = Math.min(Math.max(nextTop, 0), 1_200);
+      render();
+    },
+    waitForDomUpdate: async () => true,
+  };
+  return { driver, top: () => top };
 }
 
 describe("ChatGPTAdapter page and conversation detection", () => {
@@ -248,6 +281,80 @@ describe("ChatGPTAdapter messages", () => {
     expect(conversation.messages[1].metadata.isPartial).toBe(true);
     expect(conversation.messages[1].blocks[0].type).toBe("unknown");
     expect(conversation.metadata.parseWarnings.map((warning) => warning.code)).toContain("chatgpt-message-parse-failed");
+  });
+});
+
+describe("ChatGPTAdapter scrolling conversation collection", () => {
+  async function collectFrom(initialTop: number, bottomWindow: ChatGPTScrollWindow = "bottom"): Promise<Conversation> {
+    const initialWindow = windowForTop(initialTop, bottomWindow);
+    const document = parseDocument(scrollingWindowFixture(initialWindow));
+    const scroll = scrollDriverFor(document, initialTop, bottomWindow);
+    const adapter = new ChatGPTAdapter({
+      now: () => new Date("2026-08-16T00:00:00.000Z"),
+      collection: { driver: scroll.driver },
+    });
+    return conversationFrom(await adapter.collect(document, CHATGPT_LOCATION));
+  }
+
+  it("collects the same complete Conversation from top, middle, and bottom windows", async () => {
+    const conversations = await Promise.all([0, 600, 1_200].map((top) => collectFrom(top)));
+    const comparable = conversations.map((conversation) => ({
+      ...conversation,
+      messages: conversation.messages.map((message) => ({ ...message, metadata: { ...message.metadata } })),
+    }));
+
+    expect(comparable[1]).toEqual(comparable[0]);
+    expect(comparable[2]).toEqual(comparable[0]);
+    expect(conversations[0].metadata.isComplete).toBe(true);
+    expect(conversations[0].metadata.parseWarnings).toEqual([]);
+  });
+
+  it("deduplicates messages repeated in overlapping scroll windows", async () => {
+    const conversation = await collectFrom(600);
+
+    expect(conversation.messages).toHaveLength(6);
+    expect(conversation.messages.map((message) => message.originalText)).toEqual([
+      "Window message 0",
+      "Window message 1",
+      "Window message 2",
+      "Window message 3",
+      "Window message 4",
+      "Window message 5",
+    ]);
+  });
+
+  it("restores turn order and regenerates continuous order after starting at the bottom", async () => {
+    const conversation = await collectFrom(1_200);
+
+    expect(conversation.messages.map((message) => message.metadata.sourceAttributes?.["conversation-turn-id"])).toEqual([
+      "conversation-turn-0",
+      "conversation-turn-1",
+      "conversation-turn-2",
+      "conversation-turn-3",
+      "conversation-turn-4",
+      "conversation-turn-5",
+    ]);
+    expect(conversation.messages.map((message) => message.order)).toEqual([0, 1, 2, 3, 4, 5]);
+  });
+
+  it("preserves the original scroll position after collection", async () => {
+    const document = parseDocument(scrollingWindowFixture("middle"));
+    const scroll = scrollDriverFor(document, 600);
+    const adapter = new ChatGPTAdapter({ collection: { driver: scroll.driver } });
+
+    conversationFrom(await adapter.collect(document, CHATGPT_LOCATION));
+
+    expect(scroll.top()).toBe(600);
+  });
+
+  it("returns an explicit incomplete warning when a conversation turn remains missing", async () => {
+    const conversation = await collectFrom(600, "gapped-bottom");
+
+    expect(conversation.metadata.isComplete).toBe(false);
+    expect(conversation.metadata.parseWarnings).toContainEqual(expect.objectContaining({
+      code: "chatgpt-conversation-incomplete",
+      message: "One or more ChatGPT conversation turns were not discovered during scrolling.",
+    }));
   });
 });
 
