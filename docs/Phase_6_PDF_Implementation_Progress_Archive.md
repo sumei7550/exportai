@@ -2,7 +2,7 @@
 
 **Project**: ExportAI  
 **Updated**: 2026-08-16  
-**Scope**: Documentation archive only. Records completion through Phase 6.1.3-B. Does not start Phase 6.1.3-C or modify production behavior.
+**Scope**: Documentation archive only. Records completion through Phase 6.1.3-C1. Does not start Phase 6.1.3-C2 or modify production behavior.
 
 ---
 
@@ -19,7 +19,8 @@
 | Phase 6.1.2 | COMPLETE |
 | Phase 6.1.3-A PDF Preview Flow | COMPLETE |
 | Phase 6.1.3-B PDF Download Flow | COMPLETE |
-| Phase 6.1.3-C Popup Integration | NOT STARTED |
+| Phase 6.1.3-C1 Popup PDF Export Action | COMPLETE |
+| Phase 6.1.3-C2 Full Preview + Download User Flow | NOT STARTED |
 
 ---
 
@@ -275,9 +276,32 @@ Warning:
 
 ---
 
+## Phase 6.1.3-C1 Popup PDF Export Action
+
+**Status**: COMPLETE
+
+**Completed**:
+
+- `pdf-export-action` completed
+- Popup `Export PDF` entry completed
+- `generating` state completed
+- error handling completed
+- Popup → PDF Exporter → Preview Flow orchestration completed
+
+**Validation**:
+
+| Check | Result |
+| --- | --- |
+| `npm test` | PASS — 158 tests passed |
+| `npm run typecheck` | PASS |
+| `npm run build` | PASS |
+| `git diff --check` | PASS |
+
+---
+
 ## 3. Not Started
 
-### Phase 6.1.3-C Popup Integration
+### Phase 6.1.3-C2 Full Preview + Download User Flow
 
 **Status**: NOT STARTED
 
@@ -293,7 +317,8 @@ The following PDF capabilities remain out of scope for the completed milestones 
 | --- | --- |
 | Preview | COMPLETE (Phase 6.1.3-A) |
 | Download | COMPLETE (Phase 6.1.3-B) |
-| Popup Integration | NOT IMPLEMENTED |
+| Popup PDF Export Action | COMPLETE (Phase 6.1.3-C1) |
+| Full Preview + Download User Flow | NOT IMPLEMENTED |
 | Template selector | NOT IMPLEMENTED |
 | Settings | NOT IMPLEMENTED |
 | Complete user export flow | NOT IMPLEMENTED |
@@ -320,9 +345,9 @@ Exporter core remains platform-independent. Completed renderers consume only the
 
 ## 6. Next Step
 
-**Phase 6.1.3-C Popup Integration** — NOT STARTED.
+**Phase 6.1.3-C2 Full Preview + Download User Flow** — NOT STARTED.
 
-This archive records completion through Phase 6.1.3-B (PDF Download Flow). It does not authorize Popup Integration, Template, or Settings work.
+This archive records completion through Phase 6.1.3-C1 (Popup PDF Export Action). It does not authorize the full Preview + Download user flow, Template, or Settings work.
 
 ---
 
@@ -356,9 +381,12 @@ Phase 6.1.3-A PDF Preview Flow:
 Phase 6.1.3-B PDF Download Flow:
   COMPLETE
 
-Phase 6.1.3-C Popup Integration:
+Phase 6.1.3-C1 Popup PDF Export Action:
+  COMPLETE
+
+Phase 6.1.3-C2 Full Preview + Download User Flow:
   NOT STARTED
 
-Popup Integration / Template / Settings / Complete user export flow:
+Template / Settings / Complete user export flow:
   NOT STARTED
 ```

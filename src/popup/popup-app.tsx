@@ -3,6 +3,9 @@ import { getPlatformLabel } from "../constants/platforms";
 import type { Conversation } from "../types/conversation";
 import { saveJsonFile } from "../exporters/json-download-service";
 import { saveMarkdownFile } from "../exporters/markdown-download-service";
+import { exportPdfFromPopup, type PopupPdfExportResult } from "./pdf-export-action";
+import { createPdfPreview } from "../preview/pdf-preview";
+import { exportConversationToPdf } from "../exporters/pdf-exporter";
 import { exportJsonFromPopup, type PopupJsonExportResult } from "./json-export-action";
 import { exportMarkdownFromPopup, type PopupMarkdownExportResult } from "./markdown-export-action";
 import {
@@ -24,6 +27,15 @@ export function PopupApp() {
   const [state, setState] = useState<PopupState>({ kind: "loading" });
   const [markdownExport, setMarkdownExport] = useState<"idle" | "exporting" | PopupMarkdownExportResult>("idle");
   const [jsonExport, setJsonExport] = useState<"idle" | "exporting" | PopupJsonExportResult>("idle");
+  const [pdfExport, setPdfExport] = useState<"idle" | "generating" | PopupPdfExportResult>("idle");
+
+  useEffect(() => {
+    return () => {
+      if (typeof pdfExport === "object" && pdfExport.status === "success") {
+        pdfExport.preview.cleanup();
+      }
+    };
+  }, [pdfExport]);
 
   useEffect(() => {
     void loadConversation();
@@ -92,6 +104,11 @@ export function PopupApp() {
     setJsonExport(await exportJsonFromPopup(conversation, saveJsonFile));
   }
 
+  async function handlePdfExport(conversation: Conversation) {
+    setPdfExport("generating");
+    setPdfExport(await exportPdfFromPopup(conversation, exportConversationToPdf, createPdfPreview));
+  }
+
   function platformRow(status: PageStatus) {
     return (
       <div>
@@ -150,6 +167,14 @@ export function PopupApp() {
           >
             {jsonExport === "exporting" ? "Exporting JSON..." : "Export JSON"}
           </button>
+          <button
+            className="ml-2 mt-4 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-slate-400"
+            disabled={pdfExport === "generating"}
+            onClick={() => void handlePdfExport(state.conversation)}
+            type="button"
+          >
+            {pdfExport === "generating" ? "Generating PDF..." : "Export PDF"}
+          </button>
           {typeof markdownExport === "object" && markdownExport.status === "success" && (
             <p className="mt-3 text-sm text-emerald-700" role="status">Markdown download started: {markdownExport.filename}</p>
           )}
@@ -161,6 +186,15 @@ export function PopupApp() {
           )}
           {typeof jsonExport === "object" && jsonExport.status === "error" && (
             <p className="mt-3 text-sm text-rose-700" role="alert">{jsonExport.reason}</p>
+          )}
+          {typeof pdfExport === "object" && pdfExport.status === "success" && (
+            <>
+              <p className="mt-3 text-sm text-emerald-700" role="status">PDF preview ready: {pdfExport.filename}</p>
+              <iframe className="mt-4 h-64 w-full border-0" title="PDF preview" src={pdfExport.preview.objectUrl} />
+            </>
+          )}
+          {typeof pdfExport === "object" && pdfExport.status === "error" && (
+            <p className="mt-3 text-sm text-rose-700" role="alert">{pdfExport.code}</p>
           )}
         </section>
       )}
