@@ -116,20 +116,20 @@ function analyzeFont(fontPath, label) {
 
 const results = {};
 
-// Analyze source OTF
+// Analyze source TTF (verified jsPDF-compatible input)
 try {
-  results.otf = analyzeFont(
-    resolve(__dirname, '../src/assets/fonts/NotoSansSC-Regular.otf'),
-    'Source OTF (raw OpenType)'
+  results.source = analyzeFont(
+    resolve(__dirname, '../src/assets/fonts-test/NotoSansSC-Regular.ttf'),
+    'Source TTF (jsPDF-verified input)'
   );
 } catch (err) {
-  console.error(`OTF analysis failed: ${err.message}`);
+  console.error(`Source TTF analysis failed: ${err.message}`);
 }
 
-// Analyze subset TTF
+// Analyze subset TTF (actual fontmin output)
 try {
   results.subset = analyzeFont(
-    resolve(__dirname, '../src/assets/fonts-subset/NotoSansSC-Regular.ttf'),
+    resolve(__dirname, '../src/assets/fonts-subset/NotoSansSC-Subset.ttf'),
     'Subset TTF (fontmin output)'
   );
 } catch (err) {
@@ -140,21 +140,21 @@ console.log(`\n${'='.repeat(70)}`);
 console.log('COMPARISON');
 console.log('='.repeat(70));
 
-if (results.otf && results.subset) {
+if (results.source && results.subset) {
   console.log(`\nGlyph mapping comparison:`);
-  console.log(`${'Char'.padEnd(6)} ${'OTF GID'.padEnd(12)} ${'Subset GID'.padEnd(12)} ${'Status'}`);
+  console.log(`${'Char'.padEnd(6)} ${'Source GID'.padEnd(12)} ${'Subset GID'.padEnd(12)} ${'Status'}`);
   console.log('-'.repeat(60));
 
   for (let i = 0; i < CHARS_TO_CHECK.length; i++) {
     const char = CHARS_TO_CHECK[i];
-    const otfMap = results.otf.mappings[i];
+    const sourceMap = results.source.mappings[i];
     const subsetMap = results.subset.mappings[i];
 
-    const match = otfMap.found && subsetMap.found;
+    const match = sourceMap.found && subsetMap.found;
     const status = match ? '✓ both found' : (subsetMap.found ? '⚠️ only subset' : '❌ missing in subset');
 
     console.log(
-      `${char.char.padEnd(4)} ${String(otfMap.glyphId).padEnd(12)} ${String(subsetMap.glyphId).padEnd(12)} ${status}`
+      `${char.char.padEnd(4)} ${String(sourceMap.glyphId).padEnd(12)} ${String(subsetMap.glyphId).padEnd(12)} ${status}`
     );
   }
 }

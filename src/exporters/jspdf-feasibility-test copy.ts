@@ -123,7 +123,9 @@ export async function testEngineOnly(
 /**
  * Test B: CJK Single Font - Chinese text with SUBSET custom font
  *
- * Uses pre-subsetted TTF font preprocessed at build time from verified TTF source.
+ * Uses pre-subsetted TTF font (12 KB) preprocessed at build time.
+ * Previous FAIL was due to raw OTF format incompatibility with jsPDF.
+ * Now using proper TTF subset via fontmin.
  */
 export async function testCjkFont(
   onStage: StageCallback
@@ -140,6 +142,7 @@ export async function testCjkFont(
   try {
     logStage('Stage B1: importing subset font module');
 
+    // Import pre-subsetted font (build-time generated)
     const { NOTO_SANS_SC_SUBSET_BASE64, NOTO_SANS_SC_SUBSET_METADATA } = await import(
       '../assets/fonts-subset/NotoSansSC-Subset.js'
     );
@@ -190,7 +193,7 @@ export async function testCjkFont(
       metadata: {
         byteLength: pdfBytes.length,
         hasValidSignature,
-       fontMethod: `custom-cjk-${Math.round(fontSize / 1024)}KB`,
+        fontMethod: `custom-cjk-${Math.round(fontSize / 1024)}KB`,
       },
     };
   } catch (error) {

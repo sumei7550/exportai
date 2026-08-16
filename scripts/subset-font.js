@@ -3,7 +3,7 @@
  *
  * Subsets Noto Sans SC to only the characters needed for feasibility test.
  * Uses fontmin to:
- * 1. Read source OTF font
+ * 1. Read source TTF font (verified jsPDF-compatible)
  * 2. Extract only glyphs for specified characters
  * 3. Output subset TTF font
  *
@@ -20,7 +20,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const SOURCE_FONT = resolve(__dirname, '../src/assets/fonts/NotoSansSC-Regular.otf');
+const SOURCE_FONT = resolve(__dirname, '../src/assets/fonts-test/NotoSansSC-Regular.ttf');
 const OUTPUT_DIR = resolve(__dirname, '../src/assets/fonts-subset');
 const OUTPUT_TTF = resolve(OUTPUT_DIR, 'NotoSansSC-Subset.ttf');
 const OUTPUT_JS = resolve(OUTPUT_DIR, 'NotoSansSC-Subset.js');
@@ -67,7 +67,6 @@ async function subsetFont() {
   // Configure fontmin
   const fontmin = new Fontmin()
     .src(SOURCE_FONT)
-    .use(Fontmin.otf2ttf())
     .use(Fontmin.glyph({
       text: TEST_CHARS,
       hinting: false,
@@ -105,7 +104,7 @@ async function subsetFont() {
   const jsContent = `/**
  * Phase 6.0.1 Static Subset Font (Auto-generated)
  *
- * Source: NotoSansSC-Regular.otf (${(sourceSize / 1024 / 1024).toFixed(2)} MB)
+ * Source: NotoSansSC-Regular.ttf (${(sourceSize / 1024 / 1024).toFixed(2)} MB)
  * Subset TTF size: ${(subsetSize / 1024).toFixed(2)} KB
  * Base64 length: ${base64.length}
  * Characters: ${TEST_CHARS.length}
