@@ -6,6 +6,8 @@ export const MESSAGE_TYPE = {
   pageStatus: "EXPORTAI_PAGE_STATUS",
   parseConversation: "EXPORTAI_PARSE_CONVERSATION",
   conversationParsed: "EXPORTAI_CONVERSATION_PARSED",
+  exportFlow: "EXPORTAI_EXPORT_FLOW",
+  exportRequest: "EXPORTAI_EXPORT_REQUEST",
 } as const;
 
 export type SupportedPlatform = Platform;
@@ -33,4 +35,18 @@ export interface ConversationParsedMessage {
   payload: AdapterParseResult;
 }
 
-export type ContentScriptRequest = GetPageStatusMessage | ParseConversationMessage;
+export type ExportFlowMessage = {
+  type: typeof MESSAGE_TYPE.exportFlow;
+  payload:
+    | { status: "processing"; format: string }
+    | { status: "success"; format: string; filename: string }
+    | { status: "error"; format: string; reason: string }
+    | { status: "idle" };
+};
+
+export interface ExportFormatMessage {
+  type: typeof MESSAGE_TYPE.exportRequest;
+  format: "PDF" | "Markdown" | "JSON";
+}
+
+export type ContentScriptRequest = GetPageStatusMessage | ParseConversationMessage | ExportFlowMessage | ExportFormatMessage;

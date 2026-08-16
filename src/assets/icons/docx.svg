@@ -1,0 +1,37 @@
+<svg id="icon-preview-svg" viewBox="65.5 48.5 381 415" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+  <!-- 文档/文件外框（带折角） -->
+  <path d="M 160 64
+           L 288 64
+           L 400 176
+           L 400 400
+           A 48 48 0 0 1 352 448
+           L 160 448
+           A 48 48 0 0 1 112 400
+           L 112 112
+           A 48 48 0 0 1 160 64 Z" 
+        fill="#bfd9f8" 
+        stroke="#2B6CC4" 
+        stroke-width="27" 
+        stroke-linejoin="round"/>
+  
+  <!-- 右上角折角线条 -->
+  <path d="M 288 64
+           L 288 128
+           A 48 48 0 0 0 336 176
+           L 400 176" 
+        fill="none" 
+        stroke="#2B6CC4" 
+        stroke-width="27" 
+        stroke-linecap="round" 
+        stroke-linejoin="round"/>
+  
+  <!-- 中央字母 W -->
+  <text x="256" y="270" 
+        text-anchor="middle" 
+        dominant-baseline="central" 
+        font-size="177" 
+        font-weight="900" 
+        fill="#1A4380" 
+        font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" 
+        style="letter-spacing: -0.02em;">W</text>
+</svg>

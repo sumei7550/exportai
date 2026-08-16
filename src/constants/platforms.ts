@@ -27,3 +27,7 @@ export function detectPlatformFromHostname(hostname: string): Platform | null {
 export function getPlatformLabel(platform: Platform): string {
   return PLATFORM_DEFINITIONS[platform].label;
 }
+
+export function isExportSupported(platform: Platform): boolean {
+  return platform === "chatgpt";
+}

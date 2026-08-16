@@ -1,225 +1,55 @@
-import { useEffect, useState } from "react";
-import { getPlatformLabel } from "../constants/platforms";
-import type { Conversation } from "../types/conversation";
-import { saveJsonFile } from "../exporters/json-download-service";
-import { saveMarkdownFile } from "../exporters/markdown-download-service";
-import { exportPdfFromPopup, type PopupPdfExportResult } from "./pdf-export-action";
-import { createPdfPreview, PdfPreviewPage } from "../preview/pdf-preview";
-import { exportConversationToPdf } from "../exporters/pdf-exporter";
-import type { PdfTemplateId } from "../exporters/pdf-template";
-import { exportJsonFromPopup, type PopupJsonExportResult } from "./json-export-action";
-import { exportMarkdownFromPopup, type PopupMarkdownExportResult } from "./markdown-export-action";
-import {
-  MESSAGE_TYPE,
-  type ConversationParsedMessage,
-  type PageStatus,
-  type PageStatusMessage,
-} from "../shared/messages";
-
-type PopupState =
-  | { kind: "loading" }
-  | { kind: "parsing"; status: PageStatus }
-  | { kind: "success"; status: PageStatus; conversation: Conversation }
-  | { kind: "empty"; status: PageStatus; reason: string }
-  | { kind: "error"; status: PageStatus; reason: string }
-  | { kind: "unsupported"; reason: string };
+import { useState } from "react";
+import { detectPlatformFromHostname } from "../constants/platforms";
+import { MESSAGE_TYPE, type ExportFormatMessage } from "../shared/messages";
+import logoUrl from "../assets/icons/logo/exportai-logo.png";
+import chatgptUrl from "../assets/icons/chatgpt.svg";
+import geminiUrl from "../assets/icons/gemini.svg";
+import claudeUrl from "../assets/icons/claude.svg";
+import grokUrl from "../assets/icons/grok.svg";
+import deepseekUrl from "../assets/icons/deepseek.svg";
+import kimiUrl from "../assets/icons/kimi.svg";
+import qwenUrl from "../assets/icons/qwen.svg";
+import doubaoUrl from "../assets/icons/doubao.png";
+import perplexityUrl from "../assets/icons/perplexity.svg";
+import notebookUrl from "../assets/icons/notebooklm.svg";
+import copilotUrl from "../assets/icons/copilot.svg";
+import googleAiStudioUrl from "../assets/icons/googleaistudio.svg";
+import githubCopilotUrl from "../assets/icons/githubcopilot.svg";
+import yuanbaoUrl from "../assets/icons/yuanbao.svg";
+import searchUrl from "../assets/icons/googlesearch.svg";
+import pdfUrl from "../assets/icons/pdf.png";
+import markdownUrl from "../assets/icons/markdown.png";
+import jsonUrl from "../assets/icons/json.png";
+import docxUrl from "../assets/icons/docx.svg";
+import imageUrl from "../assets/icons/image.png";
+import textUrl from "../assets/icons/text.png";
+import lightbulbUrl from "../assets/icons/lightbulb.svg";
 
 export function PopupApp() {
-  const [state, setState] = useState<PopupState>({ kind: "loading" });
-  const [markdownExport, setMarkdownExport] = useState<"idle" | "exporting" | PopupMarkdownExportResult>("idle");
-  const [jsonExport, setJsonExport] = useState<"idle" | "exporting" | PopupJsonExportResult>("idle");
-  const [pdfExport, setPdfExport] = useState<"idle" | "generating" | PopupPdfExportResult>("idle");
-  const [pdfTemplate, setPdfTemplate] = useState<PdfTemplateId>("default");
-
-  useEffect(() => {
-    void loadConversation();
-  }, []);
-
-  async function loadConversation() {
-    setState({ kind: "loading" });
-    let pageStatus: PageStatus | undefined;
-
-    try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const [comingSoonMessage, setComingSoonMessage] = useState<string>();
+  const [showAllPlatforms, setShowAllPlatforms] = useState(false);
+  function showComingSoon(name: string) { setComingSoonMessage(`${name} is coming soon.`); window.setTimeout(() => setComingSoonMessage(undefined), 2500); }
+  function showUnsupportedPageNotice() { setComingSoonMessage("Please use on supported AI chat websites"); }
+  function openPlatform(name: string) { if (name === "ChatGPT") { window.open("https://chat.openai.com", "_blank", "noopener,noreferrer"); return; } setShowAllPlatforms(false); showComingSoon(name); }
+  function requestExport(format: ExportFormatMessage["format"]) {
+    void chrome.tabs.query({ active: true, currentWindow: true }).then(async ([tab]) => {
+      const pageUrl = tab?.url;
+      let hostname: string | undefined;
+      try { hostname = pageUrl ? new URL(pageUrl).hostname : undefined; } catch { hostname = undefined; }
       if (!tab.id) {
-        setState({ kind: "unsupported", reason: "The active tab could not be read." });
+        showUnsupportedPageNotice();
         return;
       }
-
-      const pageResponse = (await chrome.tabs.sendMessage(tab.id, {
-        type: MESSAGE_TYPE.getPageStatus,
-      })) as PageStatusMessage;
-      if (pageResponse.type !== MESSAGE_TYPE.pageStatus || pageResponse.payload.platform !== "chatgpt") {
-        setState({ kind: "unsupported", reason: "Open a readable ChatGPT conversation, then try again." });
+      try {
+        await chrome.tabs.sendMessage(tab.id, { type: MESSAGE_TYPE.exportRequest, format });
+      } catch {
+        showUnsupportedPageNotice();
         return;
       }
-
-      pageStatus = pageResponse.payload;
-      setState({ kind: "parsing", status: pageStatus });
-
-      const parseResponse = (await chrome.tabs.sendMessage(tab.id, {
-        type: MESSAGE_TYPE.parseConversation,
-      })) as ConversationParsedMessage;
-      if (parseResponse.type !== MESSAGE_TYPE.conversationParsed) {
-        setState({ kind: "error", status: pageStatus, reason: "The conversation parser returned an unexpected response." });
-        return;
-      }
-
-      const result = parseResponse.payload;
-      if (result.status === "success") {
-        setState({ kind: "success", status: pageStatus, conversation: result.conversation });
-        return;
-      }
-      if (result.status === "empty") {
-        setState({ kind: "empty", status: pageStatus, reason: result.reason });
-        return;
-      }
-      if (result.status === "unsupported") {
-        setState({ kind: "unsupported", reason: result.reason });
-        return;
-      }
-      setState({ kind: "error", status: pageStatus, reason: result.reason });
-    } catch {
-      if (pageStatus) {
-        setState({ kind: "error", status: pageStatus, reason: "The conversation could not be parsed safely." });
-        return;
-      }
-      setState({ kind: "unsupported", reason: "The current page could not be reached by ExportAI." });
-    }
+      if (hostname && detectPlatformFromHostname(hostname) !== null) window.close();
+    }).catch(showUnsupportedPageNotice);
   }
-
-  async function handleMarkdownExport(conversation: Conversation) {
-    setMarkdownExport("exporting");
-    setMarkdownExport(await exportMarkdownFromPopup(conversation, saveMarkdownFile));
-  }
-
-  async function handleJsonExport(conversation: Conversation) {
-    setJsonExport("exporting");
-    setJsonExport(await exportJsonFromPopup(conversation, saveJsonFile));
-  }
-
-  async function handlePdfExport(conversation: Conversation) {
-    setPdfExport("generating");
-    setPdfExport(await exportPdfFromPopup(conversation, exportConversationToPdf, createPdfPreview, pdfTemplate));
-  }
-
-  function platformRow(status: PageStatus) {
-    return (
-      <div>
-        <dt className="text-slate-500">Current platform</dt>
-        <dd className="mt-1 font-medium">{status.platform ? getPlatformLabel(status.platform) : "Unknown"}</dd>
-      </div>
-    );
-  }
-
-  return (
-    <main className="min-h-[320px] w-[360px] bg-slate-50 p-5 text-slate-900">
-      <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-600">Local conversation export</p>
-        <h1 className="mt-1 text-2xl font-semibold">ExportAI</h1>
-      </header>
-
-      {state.kind === "loading" && <p className="mt-8 text-sm text-slate-600">Detecting the current platform...</p>}
-
-      {state.kind === "unsupported" && (
-        <section className="mt-8 rounded-xl border border-slate-200 bg-white p-4">
-          <h2 className="font-medium">Unsupported</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-600">{state.reason}</p>
-          <button className="mt-4 text-sm font-medium text-indigo-700" onClick={() => void loadConversation()} type="button">Try again</button>
-        </section>
-      )}
-
-      {state.kind === "parsing" && (
-        <section className="mt-7 rounded-xl border border-slate-200 bg-white p-4">
-          <dl className="space-y-3 text-sm">
-            {platformRow(state.status)}
-            <div><dt className="text-slate-500">Status</dt><dd className="mt-1 font-medium">Parsing conversation...</dd></div>
-          </dl>
-        </section>
-      )}
-
-      {state.kind === "success" && (
-        <section className="mt-7 rounded-xl border border-slate-200 bg-white p-4">
-          <dl className="space-y-3 text-sm">
-            {platformRow(state.status)}
-            <div><dt className="text-slate-500">Conversation title</dt><dd className="mt-1 font-medium">{state.conversation.title}</dd></div>
-            <div><dt className="text-slate-500">Message count</dt><dd className="mt-1 font-medium">{state.conversation.metadata.messageCount}</dd></div>
-          </dl>
-          <button
-            className="mt-4 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-slate-400"
-            disabled={markdownExport === "exporting"}
-            onClick={() => void handleMarkdownExport(state.conversation)}
-            type="button"
-          >
-            {markdownExport === "exporting" ? "Exporting Markdown..." : "Export Markdown"}
-          </button>
-          <button
-            className="ml-2 mt-4 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-slate-400"
-            disabled={jsonExport === "exporting"}
-            onClick={() => void handleJsonExport(state.conversation)}
-            type="button"
-          >
-            {jsonExport === "exporting" ? "Exporting JSON..." : "Export JSON"}
-          </button>
-          <button
-            className="ml-2 mt-4 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-slate-400"
-            disabled={pdfExport === "generating"}
-            onClick={() => void handlePdfExport(state.conversation)}
-            type="button"
-          >
-            {pdfExport === "generating" ? "Generating PDF..." : "Export PDF"}
-          </button>
-          <label className="ml-2 text-sm text-slate-600">
-            Template
-            <select className="ml-1 rounded border border-slate-300 px-1 py-1" value={pdfTemplate} onChange={(event) => setPdfTemplate(event.target.value as PdfTemplateId)}>
-              <option value="default">Default</option>
-              <option value="dark">Dark</option>
-            </select>
-          </label>
-          {typeof markdownExport === "object" && markdownExport.status === "success" && (
-            <p className="mt-3 text-sm text-emerald-700" role="status">Markdown download started: {markdownExport.filename}</p>
-          )}
-          {typeof markdownExport === "object" && markdownExport.status === "error" && (
-            <p className="mt-3 text-sm text-rose-700" role="alert">{markdownExport.reason}</p>
-          )}
-          {typeof jsonExport === "object" && jsonExport.status === "success" && (
-            <p className="mt-3 text-sm text-emerald-700" role="status">JSON download started: {jsonExport.filename}</p>
-          )}
-          {typeof jsonExport === "object" && jsonExport.status === "error" && (
-            <p className="mt-3 text-sm text-rose-700" role="alert">{jsonExport.reason}</p>
-          )}
-          {typeof pdfExport === "object" && pdfExport.status === "success" && (
-            <>
-              <p className="mt-3 text-sm text-emerald-700" role="status">PDF preview ready: {pdfExport.filename}</p>
-              <div className="mt-4 h-64 overflow-auto">
-                <PdfPreviewPage
-                  filename={pdfExport.filename}
-                  pdfBytes={pdfExport.pdfBytes}
-                  resource={pdfExport.preview}
-                  template={pdfTemplate}
-                />
-              </div>
-            </>
-          )}
-          {typeof pdfExport === "object" && pdfExport.status === "error" && (
-            <p className="mt-3 text-sm text-rose-700" role="alert">{pdfExport.code}</p>
-          )}
-        </section>
-      )}
-
-      {(state.kind === "empty" || state.kind === "error") && (
-        <section className="mt-7 rounded-xl border border-slate-200 bg-white p-4">
-          <dl className="space-y-3 text-sm">
-            {platformRow(state.status)}
-            <div>
-              <dt className="text-slate-500">Status</dt>
-              <dd className="mt-1 font-medium">{state.kind === "empty" ? "Empty conversation" : "Parse error"}</dd>
-            </div>
-          </dl>
-          <p className="mt-3 text-sm leading-6 text-slate-600">{state.reason}</p>
-          <button className="mt-4 text-sm font-medium text-indigo-700" onClick={() => void loadConversation()} type="button">Try again</button>
-        </section>
-      )}
-    </main>
-  );
+  function formatButton(name: "PDF" | "Markdown" | "JSON" | "Text" | "Docx" | "Image", icon: string) { const available = name === "PDF" || name === "Markdown" || name === "JSON"; return <button aria-label={name} className={`popup-format-card ${available ? "popup-format-card-available" : "popup-format-card-disabled"}`} onClick={() => available ? requestExport(name) : showComingSoon(name)} type="button"><img alt="" className="popup-format-icon" src={icon} /><span><span className="sr-only">Export </span>{name}</span></button>; }
+  const platforms = [["ChatGPT", chatgptUrl], ["Gemini", geminiUrl], ["Claude", claudeUrl], ["NotebookLM", notebookUrl], ["Grok", grokUrl], ["DeepSeek", deepseekUrl], ["Perplexity", perplexityUrl], ["Kimi", kimiUrl], ["Qwen", qwenUrl], ["DouBao", doubaoUrl], ["Google AI Studio", googleAiStudioUrl], ["Google Search", searchUrl], ["Copilot", copilotUrl], ["Github Copilot", githubCopilotUrl], ["YuanBao", yuanbaoUrl]] as const;
+  return <main className="popup-shell"><header className="popup-header"><img alt="ExportAI" className="popup-logo" src={logoUrl} /><h1>ExportAI</h1></header><section aria-labelledby="platform-heading" className="popup-section">{showAllPlatforms ? <div className="popup-platform-expanded"><div className="popup-platform-expanded-header" id="platform-heading"><h2>All AI Platforms</h2><button aria-label="Collapse platforms" className="popup-platform-collapse" onClick={() => setShowAllPlatforms(false)} type="button">Less</button></div><div className="popup-platform-grid">{platforms.map(([name, icon]) => <button key={name} className="popup-all-platform" onClick={() => openPlatform(name)} type="button"><img alt={name} src={icon} /><span>{name}</span></button>)}</div></div> : <><h2 id="platform-heading">AI Platform</h2><div className="popup-platform-scroller">{platforms.slice(0, 6).map(([name, icon]) => <button key={name} aria-label={name} className="popup-platform-card" onClick={() => openPlatform(name)} type="button"><img alt="" src={icon} /></button>)}<button aria-label="More platforms" className="popup-platform-card popup-platform-more" onClick={() => setShowAllPlatforms(true)} type="button"><span className="popup-more-dots" aria-hidden="true">•••</span><span className="popup-more-label">More</span></button></div></>}</section>{!showAllPlatforms && <><section aria-labelledby="format-heading" className="popup-section"><h2 id="format-heading">Export Format</h2><div className="popup-card-grid popup-format-grid">{formatButton("PDF", pdfUrl)}{formatButton("Markdown", markdownUrl)}{formatButton("JSON", jsonUrl)}{formatButton("Text", textUrl)}{formatButton("Docx", docxUrl)}{formatButton("Image", imageUrl)}</div></section>{comingSoonMessage && <p className="popup-notice" role="status"><span className="popup-notice-icon" aria-hidden="true">!</span><span>{comingSoonMessage}</span></p>}<p className="popup-tip"><img alt="" className="popup-tip-icon" src={lightbulbUrl} /><span>Long conversations may take a little longer to export.</span></p></>}</main>;
 }

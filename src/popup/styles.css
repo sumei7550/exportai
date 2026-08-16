@@ -2,5 +2,40 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body, #root { margin: 0; min-width: 360px; }
-body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+html, body, #root { margin: 0; min-width: 420px; overflow-x: hidden; }
+body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #fff; }
+.popup-shell { min-height: 520px; width: 420px; box-sizing: border-box; color: #172033; background: #fff; overflow: hidden; }
+.popup-header { display: flex; align-items: center; gap: 12px; min-height: 82px; box-sizing: border-box; padding: 20px 24px; border-bottom: 1px solid #e7ebf2; }
+.popup-header h1 { margin: 0; font-size: 22px; font-weight: 750; letter-spacing: -.03em; }
+.popup-logo { width: 40px; height: 40px; border-radius: 10px; }
+.popup-section { margin-top: 0; padding: 18px 24px; }
+.popup-section + .popup-section { border-top: 1px solid #eef1f5; }
+.popup-section h2 { margin: 0 0 12px; font-size: 16px; font-weight: 750; color: #172033; }
+.popup-card-grid { display: grid; gap: 10px; }
+.popup-platform-scroller { display: flex; gap: 6px; overflow: hidden; padding: 2px 0 6px; }
+.popup-format-grid { grid-template-columns: repeat(3, 1fr); }
+.popup-platform-card, .popup-format-card { border: 1px solid #e4e9f1; border-radius: 14px; background: #fff; box-shadow: 0 3px 12px rgba(33, 48, 78, .07); color: #26334a; cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; }
+.popup-platform-card { position: relative; flex: 0 0 48px; height: 48px; padding: 5px; display: flex; align-items: center; justify-content: center; }
+.popup-platform-card img { width: 28px; height: 28px; object-fit: contain; }
+.popup-platform-expanded { margin-top: 2px; }
+.popup-platform-expanded-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.popup-platform-expanded-header h2 { margin: 0; font-size: 16px; font-weight: 750; color: #172033; }
+.popup-platform-collapse { border: 0; background: transparent; color: #5961e8; cursor: pointer; font-size: 12px; font-weight: 700; padding: 2px 0; }
+.popup-format-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
+.popup-format-icon { width: 25px; height: 25px; object-fit: contain; }
+.popup-format-card-disabled { color: #a0a8b8; background: #f8fafc; box-shadow: none; cursor: pointer; }
+.popup-format-card { min-height: 96px; padding: 10px 5px; font-size: 14px; font-weight: 700; }
+.popup-format-icon { width: 36px; height: 36px; }
+.popup-format-card-available:hover, .popup-platform-card:hover { border-color: #5961e8; box-shadow: 0 6px 18px rgba(93, 99, 220, .2); transform: translateY(-2px); }
+.popup-notice { position: fixed; left: 50%; bottom: 28px; z-index: 20; display: flex; align-items: center; gap: 9px; width: max-content; max-width: calc(100% - 32px); transform: translateX(-50%); margin: 0; border-radius: 10px; padding: 12px 16px 12px 12px; background: #172033; color: #fff; font-size: 12px; text-align: center; box-shadow: 0 12px 28px rgba(23, 32, 51, .28); }
+.popup-notice-icon { display: inline-flex; width: 19px; height: 19px; align-items: center; justify-content: center; flex: 0 0 19px; border-radius: 50%; background: #3b82f6; color: #fff; font-size: 13px; font-weight: 800; }
+.popup-state-card { margin-top: 18px; border-radius: 14px; border: 1px solid #e4e9f1; background: #fff; padding: 14px; box-shadow: 0 3px 12px rgba(33, 48, 78, .06); font-size: 12px; }
+.popup-tip { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0 24px 18px; border-radius: 14px; padding: 11px 14px; background: #f3f5ff; color: #5868d9; font-size: 12px; line-height: 1.5; text-align: left; }
+.popup-tip > span:last-child { white-space: nowrap; }
+.popup-tip-icon { width: 18px; height: 18px; flex: 0 0 18px; object-fit: contain; }
+.popup-platform-more { color: #26334a; flex-direction: column; gap: 2px; }
+.popup-more-dots { color: #8993a5; font-size: 24px; line-height: 1; letter-spacing: 2px; }
+.popup-more-label { font-size: 10px; font-weight: 650; }
+.popup-platform-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.popup-all-platform { position: relative; min-height: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border: 1px solid #e8ecf2; border-radius: 10px; background: #fff; color: #172033; cursor: pointer; font-size: 10px; font-weight: 650; }
+.popup-all-platform img { width: 24px; height: 24px; object-fit: contain; }
