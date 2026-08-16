@@ -2,7 +2,7 @@
 
 **Project**: ExportAI  
 **Updated**: 2026-08-16  
-**Scope**: Documentation archive only. Records completion through Phase 6.1.3-A. Does not start Phase 6.1.3-B or modify production behavior.
+**Scope**: Documentation archive only. Records completion through Phase 6.1.3-B. Does not start Phase 6.1.3-C or modify production behavior.
 
 ---
 
@@ -18,8 +18,8 @@
 | Phase 6.1.2-B2-B Math + Unknown | COMPLETE |
 | Phase 6.1.2 | COMPLETE |
 | Phase 6.1.3-A PDF Preview Flow | COMPLETE |
-| Phase 6.1.3-B Download Flow | NOT STARTED |
-| Phase 6.1.3 Popup Integration | NOT STARTED |
+| Phase 6.1.3-B PDF Download Flow | COMPLETE |
+| Phase 6.1.3-C Popup Integration | NOT STARTED |
 
 ---
 
@@ -219,15 +219,65 @@ Warning:
 
 ---
 
+### Phase 6.1.3-B PDF Download Flow
+
+**Status**: COMPLETE
+
+**Completed**:
+
+- PDF Download Service
+- Uint8Array → `application/pdf` Blob
+- object URL creation
+- temporary anchor download
+- PDF filename usage
+- download success / failure handling
+- anchor cleanup
+- object URL revoke cleanup
+
+**Security constraints**:
+
+- no network requests
+- no new permissions
+- no `downloads` permission
+- no file system API
+- no PDF persistence
+
+**Test coverage**:
+
+- Blob creation
+- PDF MIME type
+- PDF bytes integrity
+- filename propagation
+- object URL creation
+- download trigger
+- cleanup
+- click failure handling
+- anchor creation failure handling
+
+**Validation**:
+
+| Check | Result |
+| --- | --- |
+| `npm test` | PASS — 152 passed |
+| `npm run typecheck` | PASS |
+| `npm run build` | PASS |
+| `git diff --check` | PASS |
+
+**Constraints maintained**:
+
+- PDF Core not modified
+- Popup not modified
+- Template not implemented
+- Settings not implemented
+- No new permissions
+- No new network requests
+- PDF or Conversation data not persisted
+
+---
+
 ## 3. Not Started
 
-### Phase 6.1.3-B Download Flow
-
-**Status**: NOT STARTED
-
-Do not begin until explicitly authorized.
-
-### Phase 6.1.3 Popup Integration
+### Phase 6.1.3-C Popup Integration
 
 **Status**: NOT STARTED
 
@@ -242,9 +292,11 @@ The following PDF capabilities remain out of scope for the completed milestones 
 | Area | Status |
 | --- | --- |
 | Preview | COMPLETE (Phase 6.1.3-A) |
-| Download | NOT IMPLEMENTED |
-| Popup | NOT IMPLEMENTED |
-| Template (Default / Dark) | NOT IMPLEMENTED |
+| Download | COMPLETE (Phase 6.1.3-B) |
+| Popup Integration | NOT IMPLEMENTED |
+| Template selector | NOT IMPLEMENTED |
+| Settings | NOT IMPLEMENTED |
+| Complete user export flow | NOT IMPLEMENTED |
 
 ---
 
@@ -258,6 +310,8 @@ Unified Conversation Model
   → Uint8Array PDF bytes
   → PDF Blob + object URL (Phase 6.1.3-A preview)
   → iframe PDF Viewer preview
+  → PDF Download Service (Phase 6.1.3-B)
+  → temporary anchor download + cleanup
 ```
 
 Exporter core remains platform-independent. Completed renderers consume only the unified `Conversation` model and `PdfDocumentPlan`; they do not inspect ChatGPT, Claude, or Gemini DOM.
@@ -266,9 +320,9 @@ Exporter core remains platform-independent. Completed renderers consume only the
 
 ## 6. Next Step
 
-**Phase 6.1.3-B Download Flow** — NOT STARTED.
+**Phase 6.1.3-C Popup Integration** — NOT STARTED.
 
-This archive records completion through Phase 6.1.3-A (PDF Preview Flow). It does not authorize Download, Popup, or Template work.
+This archive records completion through Phase 6.1.3-B (PDF Download Flow). It does not authorize Popup Integration, Template, or Settings work.
 
 ---
 
@@ -299,12 +353,12 @@ Phase 6.1.2:
 Phase 6.1.3-A PDF Preview Flow:
   COMPLETE
 
-Phase 6.1.3-B Download Flow:
+Phase 6.1.3-B PDF Download Flow:
+  COMPLETE
+
+Phase 6.1.3-C Popup Integration:
   NOT STARTED
 
-Phase 6.1.3 Popup Integration:
-  NOT STARTED
-
-PDF Integration (Download / Popup / Template):
+Popup Integration / Template / Settings / Complete user export flow:
   NOT STARTED
 ```
