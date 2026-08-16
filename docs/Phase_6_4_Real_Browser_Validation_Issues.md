@@ -8,7 +8,7 @@ IN PROGRESS
 
 | ID | Issue | Severity | Priority | Status |
 |----|-------|----------|----------|--------|
-| ISSUE-001 | ChatGPT 会话消息提取不稳定：滚动页面后 message count 变化 | High | P0 | Open |
+| ISSUE-001 | ChatGPT 会话完整采集失败：滚动状态导致消息数量变化 | High | P0 | Root Cause Identified |
 | ISSUE-002 | PDF 中文字体覆盖不足：部分中文/特殊字符乱码 | High | P0 | Open |
 | ISSUE-003 | PDF 排版可读性不足：字号、间距、页面密度、消息层级需要优化 | Medium High | P1 | Open |
 | ISSUE-004 | Dark Template 对比度不足：部分文字、表格不可读 | Medium High | P1 | Open |
@@ -22,15 +22,33 @@ IN PROGRESS
 
 ## 当前阻塞问题
 
-### ISSUE-001
-描述：
-滚动 ChatGPT 会话页面后，提取到的消息数量可能发生变化，导致导出的 Conversation 不完整或前后结果不一致。
+### ISSUE-001：ChatGPT 会话完整采集失败：滚动状态导致消息数量变化
+
+现象：
+同一 ChatGPT 会话在不同滚动位置 message count 不一致。
+
+根因：
+ChatGPT Adapter 当前只读取 Popup 打开瞬间 DOM 中已挂载的消息节点。
+
+未处理：
+- 虚拟滚动
+- lazy loading
+- 历史消息卸载
+- 跨滚动窗口聚合
 
 影响：
-可能造成消息遗漏，影响会话完整性和真实浏览器验证结果。
+影响 Markdown、JSON、PDF 三种导出，因为它们共享同一个 Conversation 数据源。
 
-调查状态：
-尚未开始
+修复方向：
+在 Adapter 层实现完整会话采集，不在 exporter 中补偿。
+
+当前状态：
+
+ISSUE-001:
+Root Cause Identified
+
+Fix:
+NOT STARTED
 
 
 ### ISSUE-002
