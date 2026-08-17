@@ -269,3 +269,90 @@ PDF-002 当前结论为：**消息级布局问题已完成分析，实施未开�
 5. 增强 Message boundary 和 Conversation rhythm。
 
 本记录只归档分析结论，不代表 PDF-002 已实施或真实 Chrome 导出验收已通过。
+
+## PDF-002-A Message Renderer Foundation
+
+Status:
+COMPLETE
+
+Completed:
+
+- Added message-level renderer abstraction.
+- Message rendering is now structured as:
+
+```text
+Message
+├── Header
+├── Body
+└── Spacing
+```
+
+Implemented:
+
+- `renderMessage()` introduced.
+- `pdf-engine` no longer directly combines:
+  - `renderRoleLabel()`
+  - `renderMessageBlocks()`
+  - `advanceY()`
+
+Message spacing:
+
+Added:
+
+- `HEADER_BODY_GAP_MM`
+- `MESSAGE_BOTTOM_GAP_MM`
+
+Separated:
+
+- block spacing
+- message spacing
+
+Pagination protection:
+
+Added message start protection.
+
+Before rendering the message header, the renderer ensures enough space for:
+
+- role header
+- header/body gap
+- first content line
+
+Validation:
+
+- `npm test` passed
+- typecheck passed
+- build passed
+- existing PDF rendering tests passed
+
+Not included:
+
+- model information
+- timestamp
+- participant identity
+- message metadata
+- card/background style
+- visual redesign
+
+## PDF-002-A Visual Validation Note
+
+Observation:
+
+Although the internal Message rendering structure was improved, the visible difference compared with the previous PDF is limited.
+
+Reason:
+
+This phase focused on:
+
+- rendering architecture
+- spacing separation
+- pagination safety
+
+It did not yet introduce:
+
+- enhanced message identity
+- model header
+- visual hierarchy changes
+
+Next:
+
+PDF-002-B Message Identity Enhancement
