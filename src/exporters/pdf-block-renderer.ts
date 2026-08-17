@@ -1,7 +1,6 @@
 import {
   BLOCK_GAP_MM,
   BODY_FONT_SIZE,
-  CODE_FONT,
   CODE_LINE_HEIGHT_MM,
   CODE_PADDING_MM,
   FONT_FAMILY,
@@ -246,7 +245,7 @@ function renderCodeBlock(
     cursorY += labelHeight;
   }
 
-  state.doc.setFont(CODE_FONT, "normal");
+  state.doc.setFont(FONT_FAMILY, "normal");
   state.doc.setFontSize(fontSize);
   state.doc.setTextColor(...state.template.text);
 
@@ -268,7 +267,7 @@ function countWrappedCodeLines(
   textWidth: number,
   fontSize: number,
 ): number {
-  state.doc.setFont(CODE_FONT, "normal");
+  state.doc.setFont(FONT_FAMILY, "normal");
   state.doc.setFontSize(fontSize);
 
   return codeLines.reduce((count, line) => count + state.doc.splitTextToSize(line, textWidth).length, 0);

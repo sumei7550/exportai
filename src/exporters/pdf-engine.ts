@@ -1,5 +1,6 @@
-import { jsPDF } from "jspdf";
-import { NOTO_SANS_SC_SUBSET_BASE64 } from "../assets/fonts-subset/NotoSansSC-Subset.js";
+import { jsPDF } from "jspdf";
+import { NOTO_SANS_SC_REGULAR_BASE64 } from "../assets/fonts-test/NotoSansSC-Regular.js";
+import { NOTO_SANS_SC_BOLD_BASE64 } from "../assets/fonts/NotoSansSC-Bold.js";
 import { renderMessageBlocks, renderRoleLabel, renderTitleAndMetadata } from "./pdf-block-renderer";
 import {
   FONT_FAMILY,
@@ -10,7 +11,8 @@ import {
 import type { PdfDocumentPlan } from "./pdf-types";
 import { hasValidPdfSignature } from "./pdf-types";
 
-const FONT_FILE = "NotoSansSC-Subset.ttf";
+const FONT_FILE = "NotoSansSC-Regular.ttf";
+const BOLD_FONT_FILE = "NotoSansSC-Bold.ttf";
 
 const ROLE_LABELS: Record<PdfDocumentPlan["messages"][number]["role"], string> = {
   user: "User",
@@ -46,12 +48,13 @@ export function renderPdfDocumentPlan(plan: PdfDocumentPlan): PdfEngineResult {
   return { data, hasValidSignature: hasValidPdfSignature(data), warnings: state.warnings };
 }
 
-function registerCjkFont(doc: jsPDF): void {
-  doc.addFileToVFS(FONT_FILE, NOTO_SANS_SC_SUBSET_BASE64);
-  doc.addFont(FONT_FILE, FONT_FAMILY, "normal");
-  doc.addFont(FONT_FILE, FONT_FAMILY, "bold");
-  doc.setFont(FONT_FAMILY);
-}
+function registerCjkFont(doc: jsPDF): void {
+  doc.addFileToVFS(FONT_FILE, NOTO_SANS_SC_REGULAR_BASE64);
+  doc.addFileToVFS(BOLD_FONT_FILE, NOTO_SANS_SC_BOLD_BASE64);
+  doc.addFont(FONT_FILE, FONT_FAMILY, "normal");
+  doc.addFont(BOLD_FONT_FILE, FONT_FAMILY, "bold");
+  doc.setFont(FONT_FAMILY);
+}
 
 function buildMetadataLines(plan: PdfDocumentPlan): string[] {
   const lines = [`Platform: ${plan.metadata.platform}`];

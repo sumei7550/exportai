@@ -1,6 +1,5 @@
 import {
   BODY_FONT_SIZE,
-  CODE_FONT,
   FONT_FAMILY,
   type PdfLayoutState,
   advanceY,
@@ -86,7 +85,7 @@ function mergeAdjacentSegments(line: StyledChar[]): StyledSegment[] {
 function applyInlineStyle(state: PdfLayoutState, style: InlineStyle, fontSize: number): void {
   const doc = state.doc;
   if (style.code) {
-    doc.setFont(CODE_FONT, "normal");
+    doc.setFont(FONT_FAMILY, "normal");
   } else {
     doc.setFont(FONT_FAMILY, style.bold ? "bold" : "normal");
   }
@@ -167,19 +166,6 @@ function renderItalicSegment(
   fontSize: number,
   style: InlineStyle,
 ): void {
-  const isLatin = /^[\x20-\x7E]*$/.test(text);
-
-  if (isLatin && !style.code) {
-    if (style.bold) {
-      doc.setFont("helvetica", "bolditalic");
-    } else {
-      doc.setFont("helvetica", "italic");
-    }
-    doc.setFontSize(fontSize);
-    doc.text(text, x, y);
-    return;
-  }
-
   doc.text(text, x, y);
 }
 

@@ -3,3 +3,7 @@ dist/
 *.log
 # PDF feasibility test outputs
 test-b-subset-output.pdf
+
+# Local test outputs
+output/
+tmp/
