@@ -1,6 +1,6 @@
 import { ChatGPTAdapter } from "../adapters/chatgpt/chatgpt-adapter";
 import { detectPlatformFromHostname, isExportSupported } from "../constants/platforms";
-import { MESSAGE_TYPE, type ContentScriptRequest, type PageStatus } from "../shared/messages";
+import { MESSAGE_TYPE, type ContentScriptRequest, type ExportRequestResponse, type PageStatus } from "../shared/messages";
 import { renderExportFlowModal, renderExportToast } from "./export-flow-modal";
 import { exportConversationToMarkdown } from "../exporters/markdown-exporter";
 import { saveMarkdownFile } from "../exporters/markdown-download-service";
@@ -35,40 +35,62 @@ chrome.runtime.onMessage.addListener((message: ContentScriptRequest, _sender, se
     return true;
   }
   if (message.type === MESSAGE_TYPE.exportRequest) {
-    void runExport(message.format);
+    void prepareExport(message.format).then((prepared) => {
+      sendResponse(prepared.response);
+      if (prepared.response.status === "started") void completeExport(message.format);
+    });
+    return true;
   }
   if (message.type === MESSAGE_TYPE.exportFlow) renderExportFlowModal(message.payload);
 });
 
-async function runExport(format: "PDF" | "Markdown" | "JSON"): Promise<void> {
+type PreparedExport = {
+  response: ExportRequestResponse;
+};
+
+async function prepareExport(format: "PDF" | "Markdown" | "JSON"): Promise<PreparedExport> {
   const platform = detectPlatformFromHostname(window.location.hostname);
   if (platform === null) {
     renderExportToast("Please use on supported AI chat websites");
-    return;
+    return { response: { status: "started" } };
   }
   if (!isExportSupported(platform)) {
     renderExportToast(`${platform} export is coming soon.`);
-    return;
+    return { response: { status: "started" } };
+  }
+  const readiness = chatGPTAdapter.parse(document, window.location);
+  if (readiness.status !== "success") {
+    if (readiness.status === "empty") {
+      return { response: { status: "empty" } };
+    } else {
+      renderExportFlowModal({ status: "error", format, reason: "The conversation could not be collected safely." });
+    }
+    return { response: { status: "started" } };
   }
   renderExportFlowModal({ status: "processing", format });
+  return { response: { status: "started" } };
+}
+
+async function completeExport(format: "PDF" | "Markdown" | "JSON"): Promise<void> {
   const result = await chatGPTAdapter.collect(document, window.location);
   if (result.status !== "success") {
-    renderExportFlowModal({ status: "error", format, reason: result.status === "empty" ? result.reason : "The conversation could not be collected safely." });
+    renderExportFlowModal({ status: "error", format, reason: "The conversation could not be collected safely." });
     return;
   }
+  const conversation = result.conversation;
   try {
     if (format === "Markdown") {
-      const exported = exportConversationToMarkdown(result.conversation);
+      const exported = exportConversationToMarkdown(conversation);
       if (exported.status === "error") throw new Error("This conversation has no messages to export.");
       await saveMarkdownFile({ markdown: exported.markdown, filename: exported.filename });
       renderExportFlowModal({ status: "success", format, filename: exported.filename });
     } else if (format === "JSON") {
-      const exported = exportConversationToJson(result.conversation);
+      const exported = exportConversationToJson(conversation);
       if (exported.status === "error") throw new Error("This conversation could not be exported.");
       await saveJsonFile({ json: exported.json, filename: exported.filename });
       renderExportFlowModal({ status: "success", format, filename: exported.filename });
     } else {
-      const exported = exportConversationToPdf(result.conversation);
+      const exported = exportConversationToPdf(conversation);
       if (exported.status === "error") throw new Error(exported.code);
       await savePdfFile({ pdfBytes: exported.data, filename: exported.filename });
       renderExportFlowModal({ status: "success", format, filename: exported.filename });

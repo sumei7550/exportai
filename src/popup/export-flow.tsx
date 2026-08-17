@@ -54,7 +54,7 @@ export function ExportFlowModal({ state, onClose }: ExportFlowModalProps) {
       role="dialog"
       aria-modal="true"
     >
-      <section className="relative w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-xl">
+      <section className="relative w-full max-w-md rounded-2xl bg-white px-8 py-9 text-center shadow-xl">
         {!isProcessing && (
           <button
             aria-label="Close export message"
@@ -65,14 +65,18 @@ export function ExportFlowModal({ state, onClose }: ExportFlowModalProps) {
             ×
           </button>
         )}
-        <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+        {state.status === "success" && <div aria-hidden="true" className="mb-4 text-5xl leading-none">🎉</div>}
+        <h2 className={state.status === "success" ? "text-3xl font-bold text-slate-900" : "text-lg font-semibold text-slate-900"}>{title}</h2>
         {isProcessing ? (
           <>
             <div aria-label="Export in progress" className="mx-auto mt-5 h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-indigo-600" role="status" />
             <p aria-live="polite" className="mt-4 text-sm text-slate-600">{PROCESSING_MESSAGES[messageIndex]}</p>
           </>
         ) : state.status === "success" ? (
-          <p className="mt-4 text-sm text-emerald-700" role="status">{state.filename} download started.</p>
+          <>
+            <p className="mt-4 text-base text-slate-600" role="status">Your file has been downloaded.</p>
+            <button className="mt-6 inline-flex w-auto items-center rounded-lg bg-yellow-400 px-4 py-3 text-sm font-bold text-slate-900 hover:bg-yellow-300" onClick={() => window.open("https://example.com/buy-me-a-coffee", "_blank", "noopener,noreferrer")} type="button">☕&nbsp; Buy me a coffee</button>
+          </>
         ) : (
           <p className="mt-4 text-sm text-rose-700" role="alert">{state.reason}</p>
         )}

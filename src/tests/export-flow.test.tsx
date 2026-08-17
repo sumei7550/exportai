@@ -41,7 +41,8 @@ describe("shared export flow modal", () => {
   it("shows success until X or outside click closes it", () => {
     const { container, onClose } = renderFlow({ status: "success", format: "JSON", filename: "conversation.json" });
     expect(container.textContent).toContain("Export Success!");
-    expect(container.textContent).toContain("conversation.json download started.");
+    expect(container.textContent).toContain("Your file has been downloaded.");
+    expect(container.textContent).toContain("Buy me a coffee");
 
     const closeButton = container.querySelector('button[aria-label="Close export message"]');
     act(() => closeButton?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
@@ -57,4 +58,5 @@ describe("shared export flow modal", () => {
     expect(container.textContent).toContain("The PDF file could not be saved. Please try again.");
     expect(container.textContent).not.toContain("Export Success!");
   });
+
 });

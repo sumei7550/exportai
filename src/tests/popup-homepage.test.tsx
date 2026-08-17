@@ -1,13 +1,14 @@
 // @vitest-environment jsdom
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PopupApp } from "../popup/popup-app";
 import { MESSAGE_TYPE } from "../shared/messages";
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 let root: Root | undefined;
-afterEach(async () => { if (root) await act(async () => root?.unmount()); root = undefined; document.body.replaceChildren(); vi.unstubAllGlobals(); });
+beforeEach(() => { vi.useFakeTimers(); });
+afterEach(async () => { if (root) await act(async () => root?.unmount()); root = undefined; document.body.replaceChildren(); vi.useRealTimers(); vi.unstubAllGlobals(); });
 
 describe("Popup homepage export trigger", () => {
   it("loads the homepage without querying or parsing the active page", async () => {
@@ -37,6 +38,20 @@ describe("Popup homepage export trigger", () => {
     expect(close).toHaveBeenCalledOnce();
   });
 
+  it("shows an empty-page toast and keeps the popup open", async () => {
+    const sendMessage = vi.fn().mockResolvedValue({ status: "empty" });
+    const close = vi.fn();
+    vi.stubGlobal("chrome", { tabs: { query: vi.fn().mockResolvedValue([{ id: 7, url: "https://chatgpt.com/" }]), sendMessage } });
+    vi.stubGlobal("close", close);
+    const container = document.createElement("div"); document.body.append(container); root = createRoot(container);
+    await act(async () => { root?.render(<PopupApp />); await Promise.resolve(); });
+    await act(async () => { container.querySelector("button[aria-label='PDF']")?.dispatchEvent(new MouseEvent("click", { bubbles: true })); await Promise.resolve(); });
+    expect(container.querySelector("[role='status']")?.textContent).toContain("Please go to chat page to use export features");
+    expect(close).not.toHaveBeenCalled();
+    await act(async () => { vi.advanceTimersByTime(2500); });
+    expect(container.querySelector("[role='status']")).toBeNull();
+  });
+
   it("delegates unsupported pages to the content script without showing a duplicate notice or closing", async () => {
     const sendMessage = vi.fn().mockResolvedValue(undefined);
     const close = vi.fn();
@@ -61,6 +76,23 @@ describe("Popup homepage export trigger", () => {
     expect(container.querySelector("[role='status']")?.textContent).toContain("Please use on supported AI chat websites");
     expect(close).not.toHaveBeenCalled();
     expect(container.querySelector("[role='status']")?.textContent).not.toContain("Processing");
+    await act(async () => { vi.advanceTimersByTime(2500); });
+    expect(container.querySelector("[role='status']")).toBeNull();
+  });
+
+  it("replaces the existing toast timer when clicked repeatedly", async () => {
+    const sendMessage = vi.fn().mockRejectedValue(new Error("Could not establish connection"));
+    vi.stubGlobal("chrome", { tabs: { query: vi.fn().mockResolvedValue([{ id: 7, url: "https://www.google.com/search?q=exportai" }]), sendMessage } });
+    vi.stubGlobal("close", vi.fn());
+    const container = document.createElement("div"); document.body.append(container); root = createRoot(container);
+    await act(async () => { root?.render(<PopupApp />); await Promise.resolve(); });
+    const pdfButton = container.querySelector("button[aria-label='PDF']");
+    await act(async () => { pdfButton?.dispatchEvent(new MouseEvent("click", { bubbles: true })); await Promise.resolve(); await Promise.resolve(); });
+    await act(async () => { vi.advanceTimersByTime(2000); });
+    await act(async () => { pdfButton?.dispatchEvent(new MouseEvent("click", { bubbles: true })); await Promise.resolve(); await Promise.resolve(); });
+    expect(container.querySelectorAll("[role='status']")).toHaveLength(1);
+    await act(async () => { vi.advanceTimersByTime(2500); });
+    expect(container.querySelector("[role='status']")).toBeNull();
   });
 
   it("shows the same fallback notice on chrome:// pages", async () => {

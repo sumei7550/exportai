@@ -15,7 +15,7 @@ describe("page-level export flow modal", () => {
   it("shows success, coffee button, and closes from X or overlay", () => {
     renderExportFlowModal({ status: "success", format: "JSON", filename: "chat.json" });
     expect(document.querySelector('[role="dialog"]')?.textContent).toContain("Export Success!");
-    expect(document.querySelector("button")?.textContent).toBe("Buy me a coffee");
+    expect(document.querySelector("button")?.textContent).toContain("Buy me a coffee");
     document.querySelector('[aria-label="Close export message"]')?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     expect(document.getElementById("exportai-page-modal")).toBeNull();
 
@@ -24,4 +24,5 @@ describe("page-level export flow modal", () => {
     overlay?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
     expect(document.getElementById("exportai-page-modal")).toBeNull();
   });
+
 });

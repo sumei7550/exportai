@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { detectPlatformFromHostname } from "../constants/platforms";
-import { MESSAGE_TYPE, type ExportFormatMessage } from "../shared/messages";
+import { MESSAGE_TYPE, type ExportFormatMessage, type ExportRequestResponse } from "../shared/messages";
 import logoUrl from "../assets/icons/logo/exportai-logo.png";
 import chatgptUrl from "../assets/icons/chatgpt.svg";
 import geminiUrl from "../assets/icons/gemini.svg";
@@ -27,9 +27,21 @@ import lightbulbUrl from "../assets/icons/lightbulb.svg";
 
 export function PopupApp() {
   const [comingSoonMessage, setComingSoonMessage] = useState<string>();
+  const toastTimerRef = useRef<number | undefined>(undefined);
   const [showAllPlatforms, setShowAllPlatforms] = useState(false);
-  function showComingSoon(name: string) { setComingSoonMessage(`${name} is coming soon.`); window.setTimeout(() => setComingSoonMessage(undefined), 2500); }
-  function showUnsupportedPageNotice() { setComingSoonMessage("Please use on supported AI chat websites"); }
+  useEffect(() => () => {
+    if (toastTimerRef.current !== undefined) window.clearTimeout(toastTimerRef.current);
+  }, []);
+  function showToast(message: string) {
+    if (toastTimerRef.current !== undefined) window.clearTimeout(toastTimerRef.current);
+    setComingSoonMessage(message);
+    toastTimerRef.current = window.setTimeout(() => {
+      toastTimerRef.current = undefined;
+      setComingSoonMessage(undefined);
+    }, 2500);
+  }
+  function showComingSoon(name: string) { showToast(`${name} is coming soon.`); }
+  function showUnsupportedPageNotice() { showToast("Please use on supported AI chat websites"); }
   function openPlatform(name: string) { if (name === "ChatGPT") { window.open("https://chat.openai.com", "_blank", "noopener,noreferrer"); return; } setShowAllPlatforms(false); showComingSoon(name); }
   function requestExport(format: ExportFormatMessage["format"]) {
     void chrome.tabs.query({ active: true, currentWindow: true }).then(async ([tab]) => {
@@ -41,7 +53,11 @@ export function PopupApp() {
         return;
       }
       try {
-        await chrome.tabs.sendMessage(tab.id, { type: MESSAGE_TYPE.exportRequest, format });
+        const response = await chrome.tabs.sendMessage(tab.id, { type: MESSAGE_TYPE.exportRequest, format }) as ExportRequestResponse | undefined;
+        if (response?.status === "empty") {
+          showToast("Please go to chat page to use export features");
+          return;
+        }
       } catch {
         showUnsupportedPageNotice();
         return;

@@ -1,7 +1,7 @@
 # Phase 6.4 Real Browser Validation Issues
 
 Status:
-IN PROGRESS
+Phase 6.4 Implementation Complete / Real Browser Validation Pending
 
 
 ## Priority Strategy
@@ -20,10 +20,11 @@ PDF 视觉精修和极端字体覆盖作为后续优化，不阻塞当前版本�
 | ID | Issue | Severity | Priority | Status |
 |----|-------|----------|----------|--------|
 | ISSUE-001 | ChatGPT 会话完整采集不稳定 | High | P0 | Implementation Complete / Validation Pending |
-| ISSUE-012 | Unsupported Website Toast Lifecycle | High | P1 | Open |
-| ISSUE-013 | Export Failed Error Modal Visual Polish | High | P1 | Open |
-| ISSUE-014 | Export Success Modal Visual Polish | High | P1 | Open |
-| ISSUE-015 | Real Browser Export Flow Validation | High | P1 | Pending |
+| ISSUE-012 | Unsupported Website Toast Lifecycle | High | P1 | Complete |
+| ISSUE-013 | Empty Chat Page Feedback UX | High | P1 | Complete |
+| ISSUE-015-A | Processing / Popup Flow Timing | High | P1 | Complete |
+| ISSUE-015-B | Collection Scroll UX Known Limitation | High | P1 | Known Limitation |
+| ISSUE-014 | PDF Quality Issues | High | P2 | Later Phase |
 | ISSUE-002 | CJK Font Coverage | High | P2 | Next Version Optimization |
 | ISSUE-003 | PDF 排版可读性优化 | Medium High | P2 | Next Version Optimization |
 | ISSUE-004 | Dark Template 视觉优化 | Medium High | P2 | Next Version Optimization |
@@ -53,7 +54,7 @@ Priority:
 P1
 
 Status:
-OPEN
+COMPLETE
 
 问题：
 
@@ -69,6 +70,10 @@ Please use on supported AI chat websites
 
 当前存在 Popup Notice 和 Content Script Toast 两个提示来源，需要统一 Toast 生命周期。
 
+处理结果：
+
+已统一 Toast 生命周期，Unsupported Website 提示可按预期结束。
+
 影响：
 
 仅 UX。
@@ -81,23 +86,24 @@ Please use on supported AI chat websites
 - PDF Export
 
 
-## ISSUE-013: Export Failed Error Modal Visual Polish
+## ISSUE-013: Empty Chat Page Feedback UX
 
 Status:
-OPEN
+COMPLETE
 
 Priority:
 P1
 
 问题：
 
-ChatGPT 页面未完全加载或导出失败时显示 Error Modal。
+支持的 AI Chat 页面没有可导出 Conversation 时，Popup 显示明确的空页面反馈。
 
 当前问题：
 
-- 样式与 Processing / Success Modal 不统一
-- 错误视觉过重
-- 布局、图标、文案层级需要优化
+处理结果：
+
+- Empty Chat Page 状态已接入 Popup Flow
+- 用户可明确区分空页面与导出失败
 
 范围：
 
@@ -110,53 +116,65 @@ ChatGPT 页面未完全加载或导出失败时显示 Error Modal。
 - Error detection
 
 
-## ISSUE-014: Export Success Modal Visual Polish
+## ISSUE-015-A: Processing / Popup Flow Timing
 
 Status:
-OPEN
+COMPLETE
 
 Priority:
 P1
 
 问题：
 
-Export Success Modal 与竞品视觉存在差异。
+Popup 不提前解析 Conversation。用户点击导出格式后，Popup 发送 Export Request，
+页面级 Processing Modal 和 Success Modal 负责展示导出生命周期。
 
-待优化：
+处理结果：
 
-- 弹窗尺寸过大
-- 下载提示文案不符合预期
-- Buy me a coffee 按钮样式需要调整
+- Popup close、Processing、Success 和自动下载的时序已接入统一流程。
 
-目标：
-
-统一 Processing / Error / Success Modal 视觉语言。
-
-
-## ISSUE-015: Real Browser Export Flow Validation
+## ISSUE-015-B: Collection Scroll UX Known Limitation
 
 Status:
-PENDING
+KNOWN LIMITATION
+
+Priority:
+P1
+
+虚拟滚动页面的完整 Conversation collection 仍需 Real Browser Validation，
+并保留滚动采集 UX 已知限制。该问题不在本次 Popup Redesign 实现范围内。
+
+
+## ISSUE-001: Real Browser Validation Pending
+
+Status:
+IMPLEMENTATION COMPLETE / VALIDATION PENDING
 
 Priority:
 P1
 
 验证：
 
-ChatGPT：
+ChatGPT Conversation collection 仍需在真实浏览器中验证。
 
+## Real Browser Validation Pending
+
+以下真实浏览器场景仍需验证：
+
+- ChatGPT 完整导出流程
 - Popup 自动关闭
 - Processing Modal
 - Success Modal
-- 自动下载
+- 普通网页 fallback
+- 未支持 AI 平台通知
 
-普通网页：
+## PDF Quality Issues
 
-- `Please use on supported AI chat websites`
+Status:
+LATER PHASE
 
-未支持 AI 平台：
-
-- `xxx export is coming soon`
+PDF 视觉质量、字体覆盖、排版可读性和模板精修保留到后续阶段，不阻塞当前
+Phase 6.4 Popup Redesign + Export Flow UX 提交。
 
 
 ## P2: Next Version Optimization
@@ -203,10 +221,8 @@ P0:
 
 P1:
 
-- ISSUE-012 Unsupported Website Toast Lifecycle
-- ISSUE-013 Error Modal Visual Polish
-- ISSUE-014 Success Modal Visual Polish
-- ISSUE-015 Real Browser Export Flow Validation
+- ISSUE-001 Real Browser Validation Pending
+- ISSUE-015-B Collection Scroll UX Known Limitation
 
 P2:
 
@@ -221,21 +237,17 @@ P2:
 ## Validation Status
 
 Phase 6.4:
-IN PROGRESS
+COMPLETE (Implementation)
 
 当前版本待完成项：
 
-- ISSUE-001 Real Browser Validation
-- ISSUE-015 Real Browser Export Flow Validation
-- ISSUE-012 Unsupported Website Toast Lifecycle
-- ISSUE-013 Error Modal Visual Polish
-- ISSUE-014 Success Modal Visual Polish
+- ISSUE-001 Real Browser Validation Pending
+- ISSUE-015-B Collection Scroll UX Known Limitation
+- PDF Quality Issues 后续阶段
 
 
 ## Next Steps
 
-1. 完成 Real Browser Export Flow 验证
-2. 修复 Toast 生命周期
-3. 优化 Error / Success Modal 视觉
-4. 后续进入 PDF Quality 优化
-
+1. 完成 ISSUE-001 Real Browser Validation
+2. 处理 ISSUE-015-B Collection Scroll UX Known Limitation
+3. 后续进入 PDF Quality 优化

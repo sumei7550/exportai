@@ -420,7 +420,7 @@ Completed:
 
 ## ISSUE-012 Unsupported Website Toast Lifecycle
 
-**Status**: OPEN
+**Status**: COMPLETE
 
 **Problem**:
 
@@ -428,7 +428,8 @@ The fallback toast shown on ordinary websites:
 
 `Please use on supported AI chat websites`
 
-has an automatic dismissal lifecycle issue.
+has an automatic dismissal lifecycle issue. The Popup Notice and Content Script
+Toast lifecycles are now unified and the notice dismisses as expected.
 
 **Impact**:
 
@@ -440,9 +441,9 @@ UX notification only.
 - PDF/Markdown/JSON Export
 - Download
 
-**Follow-up**:
+**Resolution**:
 
-Unify Toast lifecycle management.
+Toast lifecycle management completed in Phase 6.4.
 
 ---
 

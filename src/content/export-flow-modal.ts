@@ -34,16 +34,16 @@ export function renderExportFlowModal(state: PageExportFlowState): void {
   Object.assign(overlay.style, { position: "fixed", inset: "0", zIndex: "2147483647", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px", background: "rgba(15, 23, 42, .42)", fontFamily: "system-ui, sans-serif" });
 
   const card = document.createElement("section");
-  Object.assign(card.style, { position: "relative", width: state.status === "success" ? "min(100%, 850px)" : "min(100%, 380px)", boxSizing: "border-box", borderRadius: state.status === "success" ? "28px" : "16px", background: "#fff", padding: state.status === "success" ? "94px 64px 174px" : "24px", textAlign: "center", boxShadow: "0 20px 50px rgba(15, 23, 42, .24)", color: "#0f172a" });
+  Object.assign(card.style, { position: "relative", width: state.status === "success" ? "min(100%, 440px)" : "min(100%, 380px)", boxSizing: "border-box", borderRadius: state.status === "success" ? "20px" : "16px", background: "#fff", padding: state.status === "success" ? "36px 32px 32px" : "24px", textAlign: "center", boxShadow: "0 20px 50px rgba(15, 23, 42, .24)", color: "#0f172a" });
   if (state.status === "success") {
     const celebration = document.createElement("div");
     celebration.textContent = "🎉";
-    Object.assign(celebration.style, { fontSize: "88px", lineHeight: "1", marginBottom: "42px" });
+    Object.assign(celebration.style, { fontSize: "56px", lineHeight: "1", marginBottom: "20px" });
     card.append(celebration);
   }
   const title = document.createElement("h2");
   title.textContent = state.status === "processing" ? "Processing, Please wait..." : state.status === "success" ? "Export Success!" : "Export Failed";
-  Object.assign(title.style, { margin: "0", fontSize: state.status === "success" ? "62px" : "18px", lineHeight: "1.15", fontWeight: state.status === "success" ? "700" : "600" });
+  Object.assign(title.style, { margin: "0", fontSize: state.status === "success" ? "28px" : "18px", lineHeight: "1.15", fontWeight: state.status === "success" ? "700" : "600" });
   card.append(title);
 
   if (state.status === "processing") {
@@ -56,10 +56,11 @@ export function renderExportFlowModal(state: PageExportFlowState): void {
     const style = document.createElement("style"); style.textContent = "@keyframes exportai-spin { to { transform: rotate(360deg); } }"; card.append(style);
     let index = 0; intervalId = window.setInterval(() => { index = (index + 1) % PROCESSING_MESSAGES.length; message.textContent = PROCESSING_MESSAGES[index]; }, 3000);
   } else {
-    const text = document.createElement("p"); text.textContent = state.status === "success" ? `${state.filename} download started.` : state.reason;
-    Object.assign(text.style, { margin: state.status === "success" ? "48px 0 0" : "16px 0 0", color: state.status === "success" ? "#4b5563" : "#be123c", fontSize: state.status === "success" ? "28px" : "14px" }); card.append(text);
-    if (state.status === "success") { const coffee = document.createElement("button"); coffee.textContent = "Buy me a coffee"; coffee.type = "button"; Object.assign(coffee.style, { display: "block", width: "410px", maxWidth: "100%", margin: "46px auto 0", padding: "24px 28px", border: "0", borderRadius: "18px", background: "#ffd000", color: "#111827", fontSize: "30px", fontWeight: "700", cursor: "pointer" }); coffee.onclick = () => window.open("https://example.com/buy-me-a-coffee", "_blank", "noopener,noreferrer"); card.append(coffee); }
-    const close = document.createElement("button"); close.type = "button"; close.setAttribute("aria-label", "Close export message"); close.textContent = "×"; Object.assign(close.style, { position: "absolute", right: "42px", top: "34px", border: "0", background: "transparent", color: "#9ca3af", fontSize: "48px", lineHeight: "1", cursor: "pointer" }); close.onclick = removeModal; card.append(close);
+    const text = document.createElement("p"); text.textContent = state.status === "success" ? "Your file has been downloaded." : state.reason;
+    Object.assign(text.style, { margin: "16px 0 0", color: state.status === "success" ? "#4b5563" : "#be123c", fontSize: state.status === "success" ? "16px" : "14px" });
+    card.append(text);
+    if (state.status === "success") { const coffee = document.createElement("button"); coffee.textContent = "☕  Buy me a coffee"; coffee.type = "button"; Object.assign(coffee.style, { display: "inline-flex", width: "auto", alignItems: "center", margin: "24px auto 0", padding: "12px 18px", border: "0", borderRadius: "10px", background: "#ffd000", color: "#111827", fontSize: "15px", fontWeight: "700", cursor: "pointer" }); coffee.onclick = () => window.open("https://example.com/buy-me-a-coffee", "_blank", "noopener,noreferrer"); card.append(coffee); }
+    const close = document.createElement("button"); close.type = "button"; close.setAttribute("aria-label", "Close export message"); close.textContent = "×"; Object.assign(close.style, { position: "absolute", right: "16px", top: "12px", border: "0", background: "transparent", color: "#9ca3af", fontSize: "28px", lineHeight: "1", cursor: "pointer" }); close.onclick = removeModal; card.append(close);
     overlay.onmousedown = (event) => { if (event.target === overlay) removeModal(); };
   }
   overlay.append(card); document.body.append(overlay);

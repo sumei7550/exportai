@@ -49,4 +49,8 @@ export interface ExportFormatMessage {
   format: "PDF" | "Markdown" | "JSON";
 }
 
+export type ExportRequestResponse =
+  | { status: "empty" }
+  | { status: "started" };
+
 export type ContentScriptRequest = GetPageStatusMessage | ParseConversationMessage | ExportFlowMessage | ExportFormatMessage;
