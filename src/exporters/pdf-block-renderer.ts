@@ -6,7 +6,8 @@ import {
   FONT_FAMILY,
   HEADING_FONT_SIZES,
   LIST_INDENT_MM,
-  MESSAGE_GAP_MM,
+  HEADER_BODY_GAP_MM,
+  MESSAGE_BOTTOM_GAP_MM,
   METADATA_FONT_SIZE,
   QUOTE_BORDER_MM,
   QUOTE_INDENT_MM,
@@ -20,7 +21,7 @@ import {
 } from "./pdf-layout";
 import autoTable from "jspdf-autotable";
 import { renderInlineContent, renderPlainText } from "./pdf-inline-renderer";
-import type { PdfBlockPlan, PdfInlinePlan, PdfListItemPlan } from "./pdf-types";
+import type { PdfBlockPlan, PdfInlinePlan, PdfListItemPlan, PdfMessagePlan } from "./pdf-types";
 
 type AutoTableDocument = PdfLayoutState["doc"] & { lastAutoTable?: { finalY: number } };
 
@@ -30,10 +31,20 @@ export function renderMessageBlocks(
   x: number,
   maxWidth: number,
 ): void {
-  for (const block of blocks) {
+  blocks.forEach((block, index) => {
     renderBlock(state, block, x, maxWidth);
-    advanceY(state, BLOCK_GAP_MM);
-  }
+    if (index < blocks.length - 1) advanceY(state, BLOCK_GAP_MM);
+  });
+}
+
+const ROLE_LABELS: Record<PdfMessagePlan["role"], string> = { user: "User", assistant: "Assistant" };
+
+export function renderMessage(state: PdfLayoutState, message: PdfMessagePlan, x: number, maxWidth: number): void {
+  ensureSpace(state, getLineHeight(ROLE_FONT_SIZE) + HEADER_BODY_GAP_MM + getLineHeight(BODY_FONT_SIZE));
+  renderRoleLabel(state, ROLE_LABELS[message.role], x, maxWidth);
+  advanceY(state, HEADER_BODY_GAP_MM);
+  renderMessageBlocks(state, message.blocks, x, maxWidth);
+  advanceY(state, MESSAGE_BOTTOM_GAP_MM);
 }
 
 function renderBlock(
@@ -365,8 +376,6 @@ export function renderTitleAndMetadata(
   advanceY(state, SECTION_GAP_MM);
 }
 
-export function renderRoleLabel(state: PdfLayoutState, label: string): void {
-  renderPlainText(state, label, state.margin, state.contentWidth, ROLE_FONT_SIZE, "bold");
+function renderRoleLabel(state: PdfLayoutState, label: string, x: number, maxWidth: number): void {
+  renderPlainText(state, label, x, maxWidth, ROLE_FONT_SIZE, "bold");
 }
-
-export { MESSAGE_GAP_MM };

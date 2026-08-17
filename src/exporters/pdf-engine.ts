@@ -1,53 +1,44 @@
 import { jsPDF } from "jspdf";
 import { NOTO_SANS_SC_REGULAR_BASE64 } from "../assets/fonts-test/NotoSansSC-Regular.js";
 import { NOTO_SANS_SC_BOLD_BASE64 } from "../assets/fonts/NotoSansSC-Bold.js";
-import { renderMessageBlocks, renderRoleLabel, renderTitleAndMetadata } from "./pdf-block-renderer";
-import {
-  FONT_FAMILY,
-  MESSAGE_GAP_MM,
-  createLayoutState,
-  advanceY,
-} from "./pdf-layout";
-import type { PdfDocumentPlan } from "./pdf-types";
-import { hasValidPdfSignature } from "./pdf-types";
-
+import { renderMessage, renderTitleAndMetadata } from "./pdf-block-renderer";
+import {
+  FONT_FAMILY,
+  createLayoutState,
+} from "./pdf-layout";
+import type { PdfDocumentPlan } from "./pdf-types";
+import { hasValidPdfSignature } from "./pdf-types";
+
 const FONT_FILE = "NotoSansSC-Regular.ttf";
 const BOLD_FONT_FILE = "NotoSansSC-Bold.ttf";
-
-const ROLE_LABELS: Record<PdfDocumentPlan["messages"][number]["role"], string> = {
-  user: "User",
-  assistant: "Assistant",
-};
-
+
 export interface PdfEngineResult {
   data: Uint8Array;
   hasValidSignature: boolean;
   warnings: PdfDocumentPlan["warnings"];
-}
-
-export function renderPdfDocumentPlan(plan: PdfDocumentPlan): PdfEngineResult {
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
-  registerCjkFont(doc);
-
+}
+
+export function renderPdfDocumentPlan(plan: PdfDocumentPlan): PdfEngineResult {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  registerCjkFont(doc);
+
   const state = createLayoutState(doc, plan.template);
   doc.setFillColor(...state.template.pageBackground);
   doc.rect(0, 0, doc.internal.pageSize.getWidth(), state.pageHeight, "F");
   doc.setTextColor(...state.template.text);
   state.warnings.push(...plan.warnings);
-  const metadataLines = buildMetadataLines(plan);
-
-  renderTitleAndMetadata(state, plan.title, metadataLines);
-
-  for (const message of plan.messages) {
-    renderRoleLabel(state, ROLE_LABELS[message.role]);
-    renderMessageBlocks(state, message.blocks, state.margin, state.contentWidth);
-    advanceY(state, MESSAGE_GAP_MM);
-  }
-
-  const data = new Uint8Array(doc.output("arraybuffer"));
+  const metadataLines = buildMetadataLines(plan);
+
+  renderTitleAndMetadata(state, plan.title, metadataLines);
+
+  for (const message of plan.messages) {
+    renderMessage(state, message, state.margin, state.contentWidth);
+  }
+
+  const data = new Uint8Array(doc.output("arraybuffer"));
   return { data, hasValidSignature: hasValidPdfSignature(data), warnings: state.warnings };
 }
-
+
 function registerCjkFont(doc: jsPDF): void {
   doc.addFileToVFS(FONT_FILE, NOTO_SANS_SC_REGULAR_BASE64);
   doc.addFileToVFS(BOLD_FONT_FILE, NOTO_SANS_SC_BOLD_BASE64);
@@ -55,9 +46,9 @@ function registerCjkFont(doc: jsPDF): void {
   doc.addFont(BOLD_FONT_FILE, FONT_FAMILY, "bold");
   doc.setFont(FONT_FAMILY);
 }
-
+
 function buildMetadataLines(plan: PdfDocumentPlan): string[] {
-  const lines = [`Platform: ${plan.metadata.platform}`];
-  if (plan.metadata.model !== undefined) lines.push(`Model: ${plan.metadata.model}`);
+  const lines = [`Platform: ${plan.metadata.platform}`];
+  if (plan.metadata.model !== undefined) lines.push(`Model: ${plan.metadata.model}`);
   return lines;
 }
