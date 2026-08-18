@@ -378,3 +378,44 @@ Observation:
 
 Model display depends on existing `Conversation.model`.
 Current smoke PDF may show limited visual difference if model metadata is unavailable.
+
+## PDF-002-C Visual Hierarchy Polish
+
+Status:
+COMPLETE
+
+Scope:
+
+- Message header
+- Message spacing
+- Message boundary
+
+Completed:
+
+- Increased the role header size from `11` to `12`.
+- Preserved the existing role labels:
+  - `User`
+  - `Assistant · model`
+- Added a light rule below the role header to make the start of each message easier to identify.
+- Increased the header/body gap from `3mm` to `4mm`.
+- Increased the message bottom spacing from `6mm` to `8mm`.
+- Kept block spacing at `3mm`, so block spacing remains smaller than message spacing.
+- Added a light rule at the end of the message body as a message boundary.
+- Kept the existing page-break protection for message headers and the existing long-message flow.
+
+Boundary decisions:
+
+- No message card, bubble, or background block was added.
+- No timestamp, participant identity, or avatar was added.
+- Font assets, inline rendering, table rendering, parser, adapter, collection, and export flow were not changed.
+
+Validation:
+
+- `npm test` passed: 14 test files, 176 tests.
+- `npm run typecheck` passed.
+- `npm run build` passed for the popup and content script builds.
+- `git diff --check` passed.
+
+Visual validation boundary:
+
+The implementation and build validations passed. A fresh real-Chrome PDF screenshot review was not performed in this phase, so the visual improvement is not marked as screenshot-verified.
