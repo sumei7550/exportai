@@ -32,7 +32,7 @@ export function renderPdfDocumentPlan(plan: PdfDocumentPlan): PdfEngineResult {
   renderTitleAndMetadata(state, plan.title, metadataLines);
 
   for (const message of plan.messages) {
-    renderMessage(state, message, state.margin, state.contentWidth);
+    renderMessage(state, message, state.margin, state.contentWidth, plan.metadata.model);
   }
 
   const data = new Uint8Array(doc.output("arraybuffer"));

@@ -356,3 +356,25 @@ It did not yet introduce:
 Next:
 
 PDF-002-B Message Identity Enhancement
+
+## PDF-002-B Message Identity Enhancement
+
+Status:
+COMPLETE
+
+Completed:
+
+- Assistant header supports model display.
+- User header remains unchanged.
+- Reused existing Message renderer.
+
+Not included:
+
+- timestamp
+- participant identity
+- visual redesign
+
+Observation:
+
+Model display depends on existing `Conversation.model`.
+Current smoke PDF may show limited visual difference if model metadata is unavailable.

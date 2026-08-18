@@ -39,12 +39,24 @@ export function renderMessageBlocks(
 
 const ROLE_LABELS: Record<PdfMessagePlan["role"], string> = { user: "User", assistant: "Assistant" };
 
-export function renderMessage(state: PdfLayoutState, message: PdfMessagePlan, x: number, maxWidth: number): void {
+export function renderMessage(
+  state: PdfLayoutState,
+  message: PdfMessagePlan,
+  x: number,
+  maxWidth: number,
+  model?: string,
+): void {
   ensureSpace(state, getLineHeight(ROLE_FONT_SIZE) + HEADER_BODY_GAP_MM + getLineHeight(BODY_FONT_SIZE));
-  renderRoleLabel(state, ROLE_LABELS[message.role], x, maxWidth);
+  renderRoleLabel(state, getRoleLabel(message, model), x, maxWidth);
   advanceY(state, HEADER_BODY_GAP_MM);
   renderMessageBlocks(state, message.blocks, x, maxWidth);
   advanceY(state, MESSAGE_BOTTOM_GAP_MM);
+}
+
+function getRoleLabel(message: PdfMessagePlan, model: string | undefined): string {
+  const roleLabel = ROLE_LABELS[message.role];
+  if (message.role !== "assistant" || model === undefined || model.length === 0) return roleLabel;
+  return `${roleLabel} · ${model}`;
 }
 
 function renderBlock(
