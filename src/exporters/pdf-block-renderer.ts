@@ -14,6 +14,8 @@ import {
   ROLE_FONT_SIZE,
   SECTION_GAP_MM,
   TITLE_FONT_SIZE,
+  USER_MESSAGE_MAX_WIDTH_RATIO,
+  USER_MESSAGE_PADDING_MM,
   type PdfLayoutState,
   advanceY,
   ensureSpace,
@@ -47,10 +49,48 @@ export function renderMessage(
   model?: string,
 ): void {
   ensureSpace(state, getLineHeight(ROLE_FONT_SIZE) + HEADER_BODY_GAP_MM + getLineHeight(BODY_FONT_SIZE));
-  renderRoleLabel(state, getRoleLabel(message, model), x, maxWidth);
+  const container = getMessageContainer(message, x, maxWidth);
+  const bodyX = container.x + container.padding;
+  const bodyWidth = container.width - container.padding * 2;
+  const containerTop = state.y - getLineHeight(ROLE_FONT_SIZE) * 0.7;
+
+  if (message.role === "user") {
+    state.doc.setFillColor(...state.template.surface);
+    state.doc.roundedRect(container.x, containerTop, container.width, estimateUserContainerHeight(state, message, bodyWidth), 2, 2, "F");
+  }
+
+  renderRoleLabel(state, getRoleLabel(message, model), bodyX, bodyWidth);
+  renderMessageRule(state, bodyX, bodyWidth, 1.5);
   advanceY(state, HEADER_BODY_GAP_MM);
-  renderMessageBlocks(state, message.blocks, x, maxWidth);
+  renderMessageBlocks(state, message.blocks, bodyX, bodyWidth);
+  renderMessageRule(state, bodyX, bodyWidth, 0);
   advanceY(state, MESSAGE_BOTTOM_GAP_MM);
+}
+
+function getMessageContainer(
+  message: PdfMessagePlan,
+  x: number,
+  maxWidth: number,
+): { x: number; width: number; padding: number } {
+  if (message.role === "assistant") return { x, width: maxWidth, padding: 0 };
+
+  const width = maxWidth * USER_MESSAGE_MAX_WIDTH_RATIO;
+  return { x: x + maxWidth - width, width, padding: USER_MESSAGE_PADDING_MM };
+}
+
+function estimateUserContainerHeight(
+  state: PdfLayoutState,
+  message: PdfMessagePlan,
+  bodyWidth: number,
+): number {
+  const bodyLines = message.blocks.reduce((total, block) => {
+    if (block.type === "text" || block.type === "paragraph" || block.type === "heading" || block.type === "unknown" || block.type === "math") {
+      return total + Math.max(1, state.doc.splitTextToSize(block.type === "heading" ? block.content.map((item) => item.text).join("") : block.type === "text" || block.type === "paragraph" ? block.content.map((item) => item.text).join("") : block.text, bodyWidth).length);
+    }
+    return total + 1;
+  }, 0);
+
+  return USER_MESSAGE_PADDING_MM * 2 + getLineHeight(ROLE_FONT_SIZE) + HEADER_BODY_GAP_MM + bodyLines * getLineHeight(BODY_FONT_SIZE) + 1;
 }
 
 function getRoleLabel(message: PdfMessagePlan, model: string | undefined): string {
@@ -390,4 +430,15 @@ export function renderTitleAndMetadata(
 
 function renderRoleLabel(state: PdfLayoutState, label: string, x: number, maxWidth: number): void {
   renderPlainText(state, label, x, maxWidth, ROLE_FONT_SIZE, "bold");
+}
+
+function renderMessageRule(
+  state: PdfLayoutState,
+  x: number,
+  maxWidth: number,
+  offset: number,
+): void {
+  state.doc.setDrawColor(...state.template.border);
+  state.doc.setLineWidth(0.25);
+  state.doc.line(x, state.y + offset, x + maxWidth, state.y + offset);
 }

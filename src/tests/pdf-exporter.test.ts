@@ -175,7 +175,7 @@ describe("PDF Exporter Core", () => {
 
     const plan = createPdfDocumentPlan(conversation);
     expect(plan.title).toBe("ExportAI PDF fixture");
-    expect(plan.metadata).toEqual({ platform: "chatgpt", model: "example-model" });
+    expect(plan.metadata).toEqual({ platform: "chatgpt", model: "example-model", exportedAt: "2026-08-12T12:00:00.000Z" });
     expect(plan.messages).toEqual([
       {
         role: "user",
@@ -489,6 +489,42 @@ describe("PDF filename", () => {
   it("uses safe names for blank and Windows-reserved titles", () => {
     expect(createPdfFilename("   ")).toBe("untitled-conversation.pdf");
     expect(createPdfFilename("CON")).toBe("CON-conversation.pdf");
+  });
+});
+
+describe("PDF document title and metadata", () => {
+  it("uses the conversation title when it is present", () => {
+    expect(createPdfDocumentPlan(createBasicConversationFixture()).title).toBe("ExportAI PDF fixture");
+  });
+
+  it("keeps the conversation title as the sole PDF title source", () => {
+    const conversation = createBasicConversationFixture();
+    conversation.title = "   ";
+    conversation.messages[0]!.originalText = "  Analyze Chrome extension architecture  ";
+    expect(createPdfDocumentPlan(conversation).title).toBe("   ");
+
+    conversation.messages[0]!.originalText = "   ";
+    conversation.messages[1]!.blocks = [{ id: "fallback-heading", type: "heading", level: 1, content: [{ text: "Heading One" }] }];
+    expect(createPdfDocumentPlan(conversation).title).toBe("   ");
+  });
+
+  it("preserves the conversation title without content-derived normalization", () => {
+    const conversation = createBasicConversationFixture();
+    conversation.title = "<invalid>:/\\|?*" + "x".repeat(200);
+    conversation.messages = conversation.messages.map((message) => ({ ...message, originalText: "   ", blocks: [] }));
+    expect(createPdfDocumentPlan(conversation).title).toBe(conversation.title);
+
+    conversation.title = "   ";
+    expect(createPdfDocumentPlan(conversation).title).toBe("   ");
+  });
+
+  it("uses the conversation title for both the filename and document title", () => {
+    const conversation = createBasicConversationFixture();
+    conversation.title = "   ";
+    const result = exportConversationToPdf(conversation);
+    expect(result).toMatchObject({ status: "success", filename: "untitled-conversation.pdf" });
+    expect(createPdfDocumentPlan(conversation).title).toBe(conversation.title);
+    expect(createPdfDocumentPlan(conversation).metadata.exportedAt).toBe(conversation.exportedAt);
   });
 });
 

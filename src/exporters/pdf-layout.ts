@@ -7,17 +7,19 @@ export const CODE_FONT = "courier";
 export const PAGE_MARGIN_MM = 14;
 export const TITLE_FONT_SIZE = 16;
 export const METADATA_FONT_SIZE = 10;
-export const ROLE_FONT_SIZE = 11;
+export const ROLE_FONT_SIZE = 12;
 export const BODY_FONT_SIZE = 11;
 export const SECTION_GAP_MM = 4;
-export const HEADER_BODY_GAP_MM = 3;
-export const MESSAGE_BOTTOM_GAP_MM = 6;
+export const HEADER_BODY_GAP_MM = 4;
+export const MESSAGE_BOTTOM_GAP_MM = 8;
 export const BLOCK_GAP_MM = 3;
 export const LIST_INDENT_MM = 6;
 export const QUOTE_INDENT_MM = 5;
 export const QUOTE_BORDER_MM = 1.5;
 export const CODE_PADDING_MM = 2;
 export const CODE_LINE_HEIGHT_MM = 4.5;
+export const USER_MESSAGE_MAX_WIDTH_RATIO = 0.72;
+export const USER_MESSAGE_PADDING_MM = 4;
 
 export const HEADING_FONT_SIZES: Record<1 | 2 | 3 | 4 | 5 | 6, number> = {
   1: 18,

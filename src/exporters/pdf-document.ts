@@ -31,7 +31,7 @@ function isSupportedMessageRole(role: MessageRole): role is PdfMessagePlan["role
 }
 
 export function createPdfDocumentPlan(conversation: Conversation, template: PdfTemplateId = "default"): PdfDocumentPlan {
-  const metadata: PdfDocumentMetadata = { platform: conversation.platform };
+  const metadata: PdfDocumentMetadata = { platform: conversation.platform, exportedAt: conversation.exportedAt };
   if (conversation.model !== undefined) metadata.model = conversation.model;
 
   const warnings: PdfExportWarning[] = [];

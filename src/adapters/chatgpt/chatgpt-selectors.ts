@@ -8,8 +8,7 @@ export const CHATGPT_DOM = {
   messageIdAttribute: "data-message-id",
   conversationTurnAttributes: ["data-testid", "id"],
   conversationTurnPattern: /^conversation-turn-(\d+)$/,
-  activeTitleLinks: ['nav a[aria-current="page"][href]', 'a[aria-current="page"][href]'],
-  headingTitles: ["main h1", 'header h1'],
+  titleLinks: ['nav a[href*="/c/"]', 'a[href*="/c/"]'],
   excludedContent: [
     "script",
     "style",

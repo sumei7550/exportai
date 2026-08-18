@@ -29,6 +29,8 @@ export function renderPdfDocumentPlan(plan: PdfDocumentPlan): PdfEngineResult {
   state.warnings.push(...plan.warnings);
   const metadataLines = buildMetadataLines(plan);
 
+  doc.setProperties({ title: plan.title, subject: "Chat conversation export", creator: "ExportAI" });
+
   renderTitleAndMetadata(state, plan.title, metadataLines);
 
   for (const message of plan.messages) {
@@ -50,5 +52,6 @@ function registerCjkFont(doc: jsPDF): void {
 function buildMetadataLines(plan: PdfDocumentPlan): string[] {
   const lines = [`Platform: ${plan.metadata.platform}`];
   if (plan.metadata.model !== undefined) lines.push(`Model: ${plan.metadata.model}`);
+  lines.push(`ExportedAt: ${plan.metadata.exportedAt}`);
   return lines;
 }

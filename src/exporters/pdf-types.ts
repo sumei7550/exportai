@@ -14,9 +14,11 @@ export type PdfExportResult =
   | { status: "success"; data: Uint8Array; filename: string; mimeType: typeof PDF_MIME_TYPE; warnings: PdfExportWarning[] }
   | { status: "error"; code: PdfExportErrorCode };
 
-export interface PdfDocumentMetadata {
+export interface PdfDocumentMetadata {
   platform: Platform;
-  model?: string;
+  model?: string;
+
+  exportedAt: string;
 }
 
 export interface PdfInlinePlan {

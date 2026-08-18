@@ -160,6 +160,10 @@ function sourceAttributes(messageNode: Element): Record<string, string> | undefi
   return Object.keys(attributes).length > 0 ? attributes : undefined;
 }
 
+function rawConversationId(pathname: string): string | null {
+  return pathname.match(/\/c\/([^/?#]+)/)?.[1] ?? null;
+}
+
 function extractConversationId(location: PageLocation): string {
   const match = location.pathname.match(/\/c\/([^/?#]+)/);
   return stableDomId("chatgpt-conversation", match?.[1] ?? location.pathname);
@@ -170,11 +174,14 @@ function cleanDocumentTitle(value: string): string {
 }
 
 function extractTitle(document: Document, location: PageLocation): string {
-  for (const selector of CHATGPT_DOM.activeTitleLinks) {
+  const currentConversationId = rawConversationId(location.pathname);
+  for (const selector of CHATGPT_DOM.titleLinks) {
     const links = [...document.querySelectorAll<HTMLAnchorElement>(selector)];
     const current = links.find((link) => {
       try {
-        return new URL(link.href, location.href).pathname === location.pathname;
+        const pathname = new URL(link.href, location.href).pathname;
+        return pathname === location.pathname
+          || (currentConversationId !== null && rawConversationId(pathname) === currentConversationId);
       } catch {
         return false;
       }
@@ -182,13 +189,8 @@ function extractTitle(document: Document, location: PageLocation): string {
     const title = current ? safeTextContent(current) : "";
     if (title) return title;
   }
-  for (const selector of CHATGPT_DOM.headingTitles) {
-    const title = document.querySelector(selector);
-    const text = title ? safeTextContent(title) : "";
-    if (text) return text;
-  }
   const documentTitle = cleanDocumentTitle(document.title);
-  return /^chatgpt$/i.test(documentTitle) ? "" : documentTitle;
+  return /^chatgpt$/i.test(documentTitle) || !documentTitle ? "Untitled conversation" : documentTitle;
 }
 
 function fallbackMessage(messageNode: Element, id: string, role: MessageRole): Message {
@@ -397,7 +399,7 @@ export class ChatGPTAdapter implements PlatformAdapter {
     }
 
     const title = extractTitle(document, location);
-    if (!title) {
+    if (title === "Untitled conversation") {
       addWarning(warnings, { code: "chatgpt-title-missing", message: "The conversation title was not available; a readable fallback title was used." });
     }
     const ordered = finalizeMessageOrder(cache, requireFullTurnSequence);
