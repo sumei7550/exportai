@@ -27,6 +27,13 @@ import type { PdfBlockPlan, PdfInlinePlan, PdfListItemPlan, PdfMessagePlan } fro
 
 type AutoTableDocument = PdfLayoutState["doc"] & { lastAutoTable?: { finalY: number } };
 
+export interface MessageBodyLayoutContext {
+  x: number;
+  y: number;
+  width: number;
+  availableWidth: number;
+}
+
 export function renderMessageBlocks(
   state: PdfLayoutState,
   blocks: PdfBlockPlan[],
@@ -34,7 +41,8 @@ export function renderMessageBlocks(
   maxWidth: number,
 ): void {
   blocks.forEach((block, index) => {
-    renderBlock(state, block, x, maxWidth);
+    const bodyContext = getMessageBodyLayoutContext(state, x, maxWidth);
+    renderBlock(state, block, bodyContext);
     if (index < blocks.length - 1) advanceY(state, BLOCK_GAP_MM);
   });
 }
@@ -102,38 +110,37 @@ function getRoleLabel(message: PdfMessagePlan, model: string | undefined): strin
 function renderBlock(
   state: PdfLayoutState,
   block: PdfBlockPlan,
-  x: number,
-  maxWidth: number,
+  bodyContext: MessageBodyLayoutContext,
 ): void {
   switch (block.type) {
     case "text":
     case "paragraph":
-      renderInlineContent(state, block.content, x, maxWidth, BODY_FONT_SIZE);
+      renderInlineContent(state, block.content, bodyContext.x, bodyContext.availableWidth, BODY_FONT_SIZE);
       return;
     case "heading":
-      renderHeading(state, block.level, block.content, x, maxWidth);
+      renderHeading(state, block.level, block.content, bodyContext.x, bodyContext.availableWidth);
       return;
     case "code":
-      renderCodeBlock(state, block.code, block.language, x, maxWidth);
+      renderCodeBlock(state, block.code, block.language, bodyContext);
       return;
     case "math":
     case "unknown":
-      renderPlainText(state, block.text, x, maxWidth, BODY_FONT_SIZE);
+      renderPlainText(state, block.text, bodyContext.x, bodyContext.availableWidth, BODY_FONT_SIZE);
       return;
     case "list":
-      renderListBlock(state, block.ordered, block.items, x, maxWidth, 0);
+      renderListBlock(state, block.ordered, block.items, bodyContext.x, bodyContext.availableWidth, 0);
       return;
     case "table":
-      renderTableBlock(state, block.headers, block.rows, x, maxWidth);
+      renderTableBlock(state, block.headers, block.rows, bodyContext.x, bodyContext.availableWidth);
       return;
     case "image":
-      renderImageBlock(state, block.src, block.alt, block.caption, x, maxWidth);
+      renderImageBlock(state, block.src, block.alt, block.caption, bodyContext.x, bodyContext.availableWidth);
       return;
     case "quote":
-      renderQuoteBlock(state, block.blocks, x, maxWidth);
+      renderQuoteBlock(state, block.blocks, bodyContext.x, bodyContext.availableWidth);
       return;
     case "thematic-break":
-      renderThematicBreak(state, x, maxWidth);
+      renderThematicBreak(state, bodyContext.x, bodyContext.availableWidth);
       return;
   }
 }
@@ -280,11 +287,11 @@ function renderCodeBlock(
   state: PdfLayoutState,
   code: string,
   language: string | undefined,
-  x: number,
-  maxWidth: number,
+  context: MessageBodyLayoutContext,
 ): void {
   const fontSize = BODY_FONT_SIZE - 1;
-  const textWidth = maxWidth - CODE_PADDING_MM * 2;
+  const blockWidth = Math.max(0, Math.min(context.width, context.availableWidth));
+  const textWidth = Math.max(0, blockWidth - CODE_PADDING_MM * 2);
   const codeLines = code.split("\n");
   const wrappedLineCount = countWrappedCodeLines(state, codeLines, textWidth, fontSize);
   const languageLabel = language?.trim() ?? "";
@@ -292,13 +299,14 @@ function renderCodeBlock(
   const blockHeight = CODE_PADDING_MM * 2 + labelHeight + wrappedLineCount * CODE_LINE_HEIGHT_MM;
 
   ensureSpace(state, blockHeight);
+  context.y = state.y;
 
-  const backgroundTop = state.y - fontSize * 0.35;
+  const backgroundTop = context.y - fontSize * 0.35;
   state.doc.setFillColor(...state.template.codeBackground);
-  state.doc.rect(x, backgroundTop, maxWidth, blockHeight, "F");
+  state.doc.rect(context.x, backgroundTop, blockWidth, blockHeight, "F");
 
-  let cursorX = x + CODE_PADDING_MM;
-  let cursorY = state.y + CODE_PADDING_MM * 0.5;
+  let cursorX = context.x + CODE_PADDING_MM;
+  let cursorY = context.y + CODE_PADDING_MM * 0.5;
 
   if (languageLabel) {
     state.doc.setFont(FONT_FAMILY, "normal");
@@ -320,7 +328,8 @@ function renderCodeBlock(
     }
   }
 
-  state.y = backgroundTop + blockHeight;
+  context.y = backgroundTop + blockHeight;
+  state.y = context.y;
   state.doc.setFont(FONT_FAMILY, "normal");
 }
 
@@ -430,6 +439,20 @@ export function renderTitleAndMetadata(
 
 function renderRoleLabel(state: PdfLayoutState, label: string, x: number, maxWidth: number): void {
   renderPlainText(state, label, x, maxWidth, ROLE_FONT_SIZE, "bold");
+}
+
+/** Capture the current message body geometry before rendering a block. */
+export function getMessageBodyLayoutContext(
+  state: PdfLayoutState,
+  x: number,
+  availableWidth: number,
+): MessageBodyLayoutContext {
+  return {
+    x,
+    y: state.y,
+    width: availableWidth,
+    availableWidth: Math.max(0, availableWidth),
+  };
 }
 
 function renderMessageRule(

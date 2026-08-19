@@ -3,6 +3,7 @@ import { createPdfDocumentPlan } from "../exporters/pdf-document";
 import { exportConversationToPdf } from "../exporters/pdf-exporter";
 import { createPdfFilename } from "../exporters/pdf-filename";
 import { hasValidPdfSignature } from "../exporters/pdf-types";
+import { getMessageBodyLayoutContext } from "../exporters/pdf-block-renderer";
 import type { Conversation } from "../types/conversation";
 import { createConversationFixture } from "./fixtures/conversation.fixture";
 
@@ -223,6 +224,19 @@ describe("PDF Exporter Core", () => {
 });
 
 describe("PDF Structured Content Rendering", () => {
+  it("provides the message body container geometry to block renderers", () => {
+    const state = {
+      y: 42,
+    } as Parameters<typeof getMessageBodyLayoutContext>[0];
+
+    expect(getMessageBodyLayoutContext(state, 100, 80)).toEqual({
+      x: 100,
+      y: 42,
+      width: 80,
+      availableWidth: 80,
+    });
+  });
+
   it("maps inline styles into the document plan", () => {
     const plan = createPdfDocumentPlan(createStructuredConversationFixture());
     const blocks = plan.messages[0]?.blocks ?? [];

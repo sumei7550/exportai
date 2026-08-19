@@ -400,6 +400,42 @@ userX = pageLeft + pageContentWidth - userWidth
 
 复杂 block 不应机械继承普通短文本的窄宽度；table、code、image 需要在后续 PDF-002-E2 中增加 block-specific min-width 或 max-width 策略。
 
+### PDF-002-E2-A Code Block Width Adaptation
+
+E2-A 仅处理 code block 的 message-width 适配，不改变 code block 的视觉样式、语言标签、分页策略或其它 block renderer。
+
+当前实现链路为：
+
+```text
+Message container
+  ↓
+bodyWidth
+  ↓
+renderMessageBlocks(..., bodyWidth)
+  ↓
+renderCodeBlock(..., maxWidth)
+  ↓
+code block background width + text wrapping width
+```
+
+实现结果：
+
+- Assistant code block 继承 Assistant message content width，并保持左侧布局；
+- User code block 继承 User message content width，不回退到 page full width；
+- code block 的最终宽度不会超过 PDF page content width；
+- code block 背景矩形和代码换行使用同一可用宽度；
+- 保持现有背景、padding、语言标签和代码样式；
+- 未修改 table、image、pagination、title、adapter、parser、font 或 Conversation Model。
+
+验证结果：
+
+- `npm test`：14 个测试文件、181 个测试通过；
+- `npm run typecheck`：通过；
+- `npm run build`：popup 和 content-script 构建通过；
+- `git diff --check`：通过。
+
+本阶段没有执行真实 Chrome 页面和 PDF 截图验证，因此 E2-A 的真实环境视觉验收仍待后续执行。
+
 ## 10. 验证范围
 
 实现后必须至少验证：
@@ -418,7 +454,9 @@ userX = pageLeft + pageContentWidth - userWidth
 
 ## 归档判断
 
-PDF-002-E 分析完成，实施未开始。
+PDF-002-E1 Message Alignment 已完成，PDF-002-E2-A Code Block Width Adaptation 已完成自动化验证。
+
+PDF-002-E2 整体仍未完成，table、image 以及真实 Chrome 链路验证仍属于后续范围。
 
 当前最重要的下一步不是继续调整字体或单个 block 样式，而是建立：
 
@@ -431,4 +469,4 @@ Message
 └── Pagination-aware measurement
 ```
 
-本记录只保存布局分析结果，不代表 alignment 已实施，也不代表真实 Chrome PDF 导出验收已通过。
+本记录同时保存 E1 与 E2-A 的实施进度，但不代表 PDF-002-E2 整体完成，也不代表真实 Chrome PDF 导出验收已通过。

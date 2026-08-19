@@ -246,6 +246,150 @@ contentWidth
 - E2 Complex Block Width
 - E3 Pagination
 
+### PDF-002-E2-A Code Block Width Adaptation
+
+✅ 完成自动化验证
+
+本子阶段仅处理 code block 的可用宽度传递：
+
+- Message container 的 `bodyWidth` 继续作为 block available width；
+- Assistant code block 不超过 Assistant message content width；
+- User code block 继承 User message content width，不回到 page full width；
+- code block 背景宽度与代码换行宽度保持一致；
+- 增加 page content width 上限保护，避免 code block 突破页面内容区。
+
+保持不变：
+
+- code style、背景、padding、语言标签；
+- table、image、普通文本、heading、list、quote renderer；
+- pagination、title、adapter、parser、font 和 Conversation Model。
+
+验证：
+
+- `npm test`：181 tests passed；
+- `npm run typecheck`：passed；
+- `npm run build`：passed；
+- `git diff --check`：passed。
+
+限制：尚未执行真实 Chrome 链路和 PDF 截图视觉验证；E2-A 不能据此标记为完整真实环境验收通过。
+
+## PDF-002-E2 Message Body Container Context
+
+Status: IMPLEMENTED (visual validation pending)
+
+### Completed
+
+已完成：
+
+- MessageBodyLayoutContext 建立
+
+- Context 包含：
+  - x
+  - y
+  - width
+  - availableWidth
+
+- Paragraph renderer：
+  - 使用 Message body context
+
+- Code renderer：
+  - 使用 Message body context
+  - 不再依赖：
+    - state.margin
+    - state.contentWidth
+    - page-level x
+    - page-level width
+
+### Code Block Layout Improvements
+
+记录：
+
+Code block 现在理论上继承：
+
+- message body x position
+- message body width
+- available content width
+
+User:
+
+```text
+User Message
+└ Body Container
+  └ Code Block
+```
+
+Assistant：
+
+保持：
+
+```text
+Assistant Message
+└ Body Container
+  └ Code Block
+```
+
+---
+
+## Visual Validation Status
+
+标记：
+
+PENDING
+
+原因：
+
+自动化验证已通过：
+
+- npm test
+- typecheck
+- build
+
+但真实 Chrome 导出 PDF 视觉验证尚未完成。
+
+当前需要验证：
+
+1. User Code Block
+
+确认：
+
+- 是否位于 User body container 内
+- background 是否跟随 container
+- width 是否正确
+
+2. Assistant Code Block
+
+确认：
+
+- 是否保持 Assistant content width
+- 是否没有漂移
+
+3. Clean Conversation Validation
+
+当前测试 Conversation 包含较多验证说明文本，可能影响视觉判断。
+
+下一次验证使用：
+
+- 单纯 User code message
+- 单纯 Assistant code message
+
+避免测试说明文本干扰。
+
+---
+
+## Remaining PDF-002-E2 Work
+
+保持：
+
+Pending:
+
+- E2-B Table Width Adaptation
+- E2-C Image Width Adaptation
+- E3 Pagination Adaptation
+
+不要标记：
+
+Code Block 完全完成。
+
 
 # P1 Alignment Compatibility Risk
 
@@ -309,7 +453,7 @@ Conversation alignment 应首先作为 Message container 层能力实现，
 处理：
 
 - table；
-- code；
+- code（E2-A 已完成 message-width 适配）；
 - image。
 
 ------
