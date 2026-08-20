@@ -71,8 +71,9 @@ export type PdfBlockPlan =
   | { type: "quote"; blocks: PdfBlockPlan[] }
   | { type: "thematic-break" };
 
-export interface PdfMessagePlan {
-  role: "user" | "assistant";
+export interface PdfMessagePlan {
+  id: string;
+  role: "user" | "assistant";
   blocks: PdfBlockPlan[];
 }
 

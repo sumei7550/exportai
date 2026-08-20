@@ -11,7 +11,7 @@ export const ROLE_FONT_SIZE = 12;
 export const BODY_FONT_SIZE = 11;
 export const SECTION_GAP_MM = 4;
 export const HEADER_BODY_GAP_MM = 4;
-export const MESSAGE_BOTTOM_GAP_MM = 8;
+export const MESSAGE_BOTTOM_GAP_MM = 12;
 export const BLOCK_GAP_MM = 3;
 export const LIST_INDENT_MM = 6;
 export const QUOTE_INDENT_MM = 5;
@@ -38,6 +38,7 @@ export interface PdfLayoutState {
   y: number;
   warnings: PdfExportWarning[];
   template: PdfTemplateConfig;
+  activeUserSurface?: { messageId: string; pageNumber: number; x: number; width: number };
 }
 
 export function createLayoutState(doc: jsPDF, template: PdfTemplateId = "default"): PdfLayoutState {
@@ -72,6 +73,22 @@ export function advanceY(state: PdfLayoutState, amount: number): void {
 
 export function setBodyTextColor(state: PdfLayoutState): void {
   state.doc.setTextColor(...state.template.text);
+}
+
+export function paintActiveUserSurface(state: PdfLayoutState, top: number, height: number): void {
+  const activeSurface = state.activeUserSurface;
+  const currentPage = state.doc.getCurrentPageInfo().pageNumber;
+  if (activeSurface === undefined || height <= 0) return;
+  activeSurface.pageNumber = currentPage;
+
+  state.doc.setFillColor(...state.template.surface);
+  state.doc.rect(
+    activeSurface.x,
+    top - 1,
+    activeSurface.width,
+    height + 1,
+    "F",
+  );
 }
 
 export function setLinkTextColor(state: PdfLayoutState): void {

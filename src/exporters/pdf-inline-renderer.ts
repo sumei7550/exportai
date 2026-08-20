@@ -5,6 +5,7 @@ import {
   advanceY,
   ensureSpace,
   getLineHeight,
+  paintActiveUserSurface,
 } from "./pdf-layout";
 import type { PdfInlinePlan } from "./pdf-types";
 
@@ -227,6 +228,7 @@ export function renderInlineContent(
 
   for (const line of lines) {
     ensureSpace(state, lineHeight);
+    paintActiveUserSurface(state, state.y, lineHeight);
     renderStyledLine(state, line, x, state.y, fontSize);
     advanceY(state, lineHeight);
   }
@@ -249,6 +251,7 @@ export function renderPlainText(
 
   for (const line of lines) {
     ensureSpace(state, lineHeight);
+    paintActiveUserSurface(state, state.y, lineHeight);
     state.doc.text(line, x, state.y);
     advanceY(state, lineHeight);
   }

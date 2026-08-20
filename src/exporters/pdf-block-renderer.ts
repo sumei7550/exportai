@@ -20,6 +20,7 @@ import {
   advanceY,
   ensureSpace,
   getLineHeight,
+  paintActiveUserSurface,
 } from "./pdf-layout";
 import autoTable from "jspdf-autotable";
 import { renderInlineContent, renderPlainText } from "./pdf-inline-renderer";
@@ -43,7 +44,10 @@ export function renderMessageBlocks(
   blocks.forEach((block, index) => {
     const bodyContext = getMessageBodyLayoutContext(state, x, maxWidth);
     renderBlock(state, block, bodyContext);
-    if (index < blocks.length - 1) advanceY(state, BLOCK_GAP_MM);
+    if (index < blocks.length - 1) {
+      paintActiveUserSurface(state, state.y, BLOCK_GAP_MM);
+      advanceY(state, BLOCK_GAP_MM);
+    }
   });
 }
 
@@ -64,15 +68,39 @@ export function renderMessage(
 
   if (message.role === "user") {
     state.doc.setFillColor(...state.template.surface);
-    state.doc.roundedRect(container.x, containerTop, container.width, estimateUserContainerHeight(state, message, bodyWidth), 2, 2, "F");
+    // Bridge the baseline offset between the rounded role header and the
+    // first body line so one User message remains a continuous surface.
+    state.doc.rect(
+      container.x,
+      containerTop + 2,
+      container.width,
+      getLineHeight(ROLE_FONT_SIZE) + HEADER_BODY_GAP_MM + getLineHeight(BODY_FONT_SIZE),
+      "F",
+    );
+    state.doc.roundedRect(container.x, containerTop, container.width, getLineHeight(ROLE_FONT_SIZE) + HEADER_BODY_GAP_MM + 1, 2, 2, "F");
+    state.activeUserSurface = {
+      messageId: message.id,
+      pageNumber: state.doc.getCurrentPageInfo().pageNumber,
+      x: container.x,
+      width: container.width,
+    };
+  } else {
+    state.activeUserSurface = undefined;
   }
 
   renderRoleLabel(state, getRoleLabel(message, model), bodyX, bodyWidth);
-  renderMessageRule(state, bodyX, bodyWidth, 1.5);
   advanceY(state, HEADER_BODY_GAP_MM);
   renderMessageBlocks(state, message.blocks, bodyX, bodyWidth);
-  renderMessageRule(state, bodyX, bodyWidth, 0);
   advanceY(state, MESSAGE_BOTTOM_GAP_MM);
+
+  if (message.role === "user") {
+    // A continuation surface is painted to the bottom of a page when this
+    // message crosses it. Clear only the unused tail after the message ends
+    // so the following Assistant content does not inherit the User surface.
+    state.doc.setFillColor(...state.template.pageBackground);
+    state.doc.rect(container.x, state.y, container.width, Math.max(0, state.pageHeight - state.y), "F");
+    if (state.activeUserSurface?.messageId === message.id) state.activeUserSurface = undefined;
+  }
 }
 
 function getMessageContainer(
@@ -84,21 +112,6 @@ function getMessageContainer(
 
   const width = maxWidth * USER_MESSAGE_MAX_WIDTH_RATIO;
   return { x: x + maxWidth - width, width, padding: USER_MESSAGE_PADDING_MM };
-}
-
-function estimateUserContainerHeight(
-  state: PdfLayoutState,
-  message: PdfMessagePlan,
-  bodyWidth: number,
-): number {
-  const bodyLines = message.blocks.reduce((total, block) => {
-    if (block.type === "text" || block.type === "paragraph" || block.type === "heading" || block.type === "unknown" || block.type === "math") {
-      return total + Math.max(1, state.doc.splitTextToSize(block.type === "heading" ? block.content.map((item) => item.text).join("") : block.type === "text" || block.type === "paragraph" ? block.content.map((item) => item.text).join("") : block.text, bodyWidth).length);
-    }
-    return total + 1;
-  }, 0);
-
-  return USER_MESSAGE_PADDING_MM * 2 + getLineHeight(ROLE_FONT_SIZE) + HEADER_BODY_GAP_MM + bodyLines * getLineHeight(BODY_FONT_SIZE) + 1;
 }
 
 function getRoleLabel(message: PdfMessagePlan, model: string | undefined): string {
@@ -206,6 +219,7 @@ function renderImageFallback(
     .join(" - ");
   const lineHeight = getLineHeight(METADATA_FONT_SIZE);
   ensureSpace(state, lineHeight * 2);
+  paintActiveUserSurface(state, state.y, lineHeight * 2);
   state.doc.setDrawColor(...state.template.border);
   state.doc.setFillColor(...state.template.surface);
   state.doc.rect(x, state.y - METADATA_FONT_SIZE * 0.35, maxWidth, lineHeight * 2, "FD");
@@ -259,6 +273,7 @@ function renderTableBlock(
   });
 
   const finalY = (state.doc as AutoTableDocument).lastAutoTable?.finalY;
+  paintActiveUserSurface(state, state.y, Math.max(0, (typeof finalY === "number" ? finalY : state.y) - state.y));
   state.y = typeof finalY === "number" ? finalY : state.y;
   state.doc.setFont(FONT_FAMILY, "normal");
 }
@@ -300,6 +315,7 @@ function renderCodeBlock(
 
   ensureSpace(state, blockHeight);
   context.y = state.y;
+  paintActiveUserSurface(state, context.y, blockHeight);
 
   const backgroundTop = context.y - fontSize * 0.35;
   state.doc.setFillColor(...state.template.codeBackground);
@@ -453,15 +469,4 @@ export function getMessageBodyLayoutContext(
     width: availableWidth,
     availableWidth: Math.max(0, availableWidth),
   };
-}
-
-function renderMessageRule(
-  state: PdfLayoutState,
-  x: number,
-  maxWidth: number,
-  offset: number,
-): void {
-  state.doc.setDrawColor(...state.template.border);
-  state.doc.setLineWidth(0.25);
-  state.doc.line(x, state.y + offset, x + maxWidth, state.y + offset);
 }

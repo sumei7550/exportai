@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build && vite build --mode content-script",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:pdf-render:sample": "vitest run src/tests/pdf-render-sample.test.ts",
+    "test:pdf-render": "npm run test:pdf-render:sample && node scripts/pdf-render-validation.mjs"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^5.0.2",

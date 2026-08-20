@@ -41,7 +41,7 @@ export function createPdfDocumentPlan(conversation: Conversation, template: PdfT
       if (!isSupportedMessageRole(message.role)) return [];
       const blocks = extractMessageBlocks(message, warnings);
       if (blocks.length === 0) return [];
-      return [{ role: message.role, blocks }];
+      return [{ id: message.id, role: message.role, blocks }];
     });
 
   return {
