@@ -5,7 +5,7 @@
 
 ExportAI is a local-first browser extension for exporting readable AI conversations to files on the user's device. This Privacy Policy explains what ExportAI processes, what it does not collect, and what remains under the user's control.
 
-> **Publication note:** Replace `[your privacy contact email]` with a monitored contact address before publishing this policy or submitting the extension to the Chrome Web Store.
+> **Privacy contact:** `sumei7550@outlook.com`
 
 ## 1. Scope
 
@@ -77,7 +77,7 @@ We may update this policy when ExportAI's data practices, permissions, supported
 
 For privacy questions or requests concerning ExportAI, contact:
 
-**Email:** [your privacy contact email]
+**Email:** sumei7550@outlook.com
 
 ---
 
@@ -88,7 +88,7 @@ For privacy questions or requests concerning ExportAI, contact:
 
 ExportAI 是一款本地优先的浏览器扩展，用于将浏览器中可读取的 AI 对话导出为保存到用户设备的文件。本隐私政策说明 ExportAI 会处理哪些信息、不会收集哪些信息，以及哪些内容由用户自行控制。
 
-> **发布前提示：** 在发布本政策或提交 Chrome Web Store 前，请将 `[your privacy contact email]` 替换为真实且有人维护的隐私联系邮箱。
+> **隐私联系邮箱：** `sumei7550@outlook.com`
 
 ## 1. 适用范围
 
@@ -160,4 +160,4 @@ ExportAI 是通用浏览器扩展，并非专门面向儿童，也不会明知�
 
 如有 ExportAI 隐私问题或相关请求，请联系：
 
-**邮箱：** [your privacy contact email]
+**邮箱：** sumei7550@outlook.com
