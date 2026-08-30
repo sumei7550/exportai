@@ -19,7 +19,7 @@ PDF 视觉精修和极端字体覆盖作为后续优化，不阻塞当前版本�
 
 | ID | Issue | Severity | Priority | Status |
 |----|-------|----------|----------|--------|
-| ISSUE-001 | ChatGPT 会话完整采集不稳定 | High | P0 | Implementation Complete / Validation Pending |
+| ISSUE-001 | ChatGPT 会话完整采集不稳定 | High | v1.1 | Deferred to v1.1 |
 | ISSUE-012 | Unsupported Website Toast Lifecycle | High | P1 | Complete |
 | ISSUE-013 | Empty Chat Page Feedback UX | High | P1 | Complete |
 | ISSUE-015-A | Processing / Popup Flow Timing | High | P1 | Complete |
@@ -33,19 +33,43 @@ PDF 视觉精修和极端字体覆盖作为后续优化，不阻塞当前版本�
 | ISSUE-010 | 文件命名/tmp 下载细节 | Low | P2 | Next Version Optimization |
 
 
-## ISSUE-001: ChatGPT 会话完整采集不稳定
+## ISSUE-001 ChatGPT Full Conversation Collection Stability
 
-Priority:
-P0
+当前状态：
 
-Status:
-Implementation Complete
+```text
+Deferred to v1.1
+```
 
-Validation:
-Pending
+原因：
 
-说明：
-这是所有导出的基础问题。Markdown、JSON、PDF 三种导出共享同一个 Conversation 数据源，因此必须完成 Real Browser Validation，确认不同滚动状态下都能完整、稳定地采集会话。
+ChatGPT virtualization / dynamic loading 场景需要更深入处理，不阻塞 v1 发布。
+
+已完成：
+
+- ✅ Message identity collection
+- ✅ MessageCache alias merge
+- ✅ Ordering conflict prevention
+- ✅ Virtualized DOM edge validation
+- ✅ Turn sequence baseline validation
+- ✅ Real Chrome diagnostic framework
+
+当前限制：
+
+Known limitation:
+
+- Extremely long ChatGPT conversations may occasionally fail complete collection.
+- Different initial scroll positions may produce different collection completeness.
+- Future version will improve virtualization settle detection.
+
+未来计划：
+
+v1.1:
+
+- Improve top loading completion detection
+- Improve virtualization settle strategy
+- Complete top/middle/bottom consistency validation
+- Improve incomplete recovery behavior
 
 
 ## ISSUE-012: Unsupported Website Toast Lifecycle
@@ -145,18 +169,6 @@ P1
 并保留滚动采集 UX 已知限制。该问题不在本次 Popup Redesign 实现范围内。
 
 
-## ISSUE-001: Real Browser Validation Pending
-
-Status:
-IMPLEMENTATION COMPLETE / VALIDATION PENDING
-
-Priority:
-P1
-
-验证：
-
-ChatGPT Conversation collection 仍需在真实浏览器中验证。
-
 ## Real Browser Validation Pending
 
 以下真实浏览器场景仍需验证：
@@ -215,13 +227,8 @@ Phase 6.4 Popup Redesign + Export Flow UX 提交。
 
 ## Current Priority
 
-P0:
-
-- ISSUE-001 ChatGPT Conversation 完整采集稳定性
-
 P1:
 
-- ISSUE-001 Real Browser Validation Pending
 - ISSUE-015-B Collection Scroll UX Known Limitation
 
 P2:
@@ -239,15 +246,15 @@ P2:
 Phase 6.4:
 COMPLETE (Implementation)
 
-当前版本待完成项：
+当前版本已知限制：
 
-- ISSUE-001 Real Browser Validation Pending
+- ISSUE-001 ChatGPT Full Conversation Collection Stability（Deferred to v1.1）
 - ISSUE-015-B Collection Scroll UX Known Limitation
 - PDF Quality Issues 后续阶段
 
 
 ## Next Steps
 
-1. 完成 ISSUE-001 Real Browser Validation
-2. 处理 ISSUE-015-B Collection Scroll UX Known Limitation
-3. 后续进入 PDF Quality 优化
+1. 处理 ISSUE-015-B Collection Scroll UX Known Limitation
+2. 后续进入 PDF Quality 优化
+3. v1.1 处理 ISSUE-001 ChatGPT Full Conversation Collection Stability

@@ -285,6 +285,39 @@ describe("ChatGPTAdapter messages", () => {
 });
 
 describe("ChatGPTAdapter scrolling conversation collection", () => {
+  function sequenceMarkup(turns: number[]): string {
+    return `<!doctype html><title>Sequence test</title><main>${turns.map((turn) => `
+      <section data-testid="conversation-turn-${turn}" data-message-id="message-${turn}">
+        <div data-message-author-role="${turn % 2 === 0 ? "user" : "assistant"}">
+          <p>Turn ${turn}</p>
+        </div>
+      </section>
+    `).join("")}</main>`;
+  }
+
+  async function collectSequence(turns: number[]): Promise<Conversation> {
+    const document = parseDocument(sequenceMarkup(turns));
+    const container = document.querySelector("main");
+    if (!(container instanceof HTMLElement)) throw new Error("Expected fixture main element");
+    const driver: ChatGPTScrollDriver = {
+      findContainer: () => container,
+      readState: () => ({ top: 0, max: 0, viewport: 600 }),
+      scrollTo: () => undefined,
+      waitForDomUpdate: async () => true,
+    };
+    return conversationFrom(await new ChatGPTAdapter({ collection: { driver } }).collect(document, CHATGPT_LOCATION));
+  }
+
+  function orderedWindowMarkup(turns: number[]): string {
+    return turns.map((turn) => `
+      <section data-testid="conversation-turn-${turn}" data-message-id="message-${turn}">
+        <div data-message-author-role="${turn % 2 === 0 ? "user" : "assistant"}">
+          <p>Turn ${turn}</p>
+        </div>
+      </section>
+    `).join("");
+  }
+
   async function collectFrom(initialTop: number, bottomWindow: ChatGPTScrollWindow = "bottom"): Promise<Conversation> {
     const initialWindow = windowForTop(initialTop, bottomWindow);
     const document = parseDocument(scrollingWindowFixture(initialWindow));
@@ -355,6 +388,61 @@ describe("ChatGPTAdapter scrolling conversation collection", () => {
       code: "chatgpt-conversation-incomplete",
       message: "One or more ChatGPT conversation turns were not discovered during scrolling.",
     }));
+  });
+
+  it("ignores a non-increasing turn edge from a virtualized window", async () => {
+    const document = parseDocument(`<main>${orderedWindowMarkup([6, 7, 8])}</main>`);
+    const container = document.querySelector("main");
+    if (!(container instanceof HTMLElement)) throw new Error("Expected fixture main element");
+    let top = 0;
+    let renderedWindow: "first" | "second" = "first";
+    const render = (): void => {
+      container.innerHTML = orderedWindowMarkup(renderedWindow === "first" ? [6, 7, 8] : [17, 7, 18]);
+    };
+    const driver: ChatGPTScrollDriver = {
+      findContainer: () => container,
+      readState: () => ({ top, max: 100, viewport: 100 }),
+      scrollTo: (_container, nextTop) => {
+        top = nextTop;
+        renderedWindow = top === 0 ? "first" : "second";
+        render();
+      },
+      waitForDomUpdate: async () => true,
+    };
+    const adapter = new ChatGPTAdapter({ collection: { driver } });
+
+    const conversation = conversationFrom(await adapter.collect(document, CHATGPT_LOCATION));
+
+    expect(conversation.messages.map((message) => message.metadata.sourceAttributes?.["conversation-turn-id"])).toEqual([
+      "conversation-turn-6",
+      "conversation-turn-7",
+      "conversation-turn-8",
+      "conversation-turn-17",
+      "conversation-turn-18",
+    ]);
+    expect(conversation.metadata.parseWarnings.map((warning) => warning.code)).toContain("chatgpt-message-order-conflict");
+    expect(conversation.metadata.parseWarnings.map((warning) => warning.message)).not.toContain(
+      "Conflicting ChatGPT message order was detected while merging message windows.",
+    );
+  });
+
+  it("accepts only contiguous 0-based or 1-based turn sequences", async () => {
+    const acceptedSequences = [[0, 1, 2, 3], [1, 2, 3, 4]];
+    for (const turns of acceptedSequences) {
+      const conversation = await collectSequence(turns);
+      expect(conversation.metadata.isComplete).toBe(true);
+      expect(conversation.metadata.parseWarnings).toEqual([]);
+    }
+
+    const rejectedSequences = [[0, 1, 3], [1, 2, 4], [2, 3, 4]];
+    for (const turns of rejectedSequences) {
+      const conversation = await collectSequence(turns);
+      expect(conversation.metadata.isComplete).toBe(false);
+      expect(conversation.metadata.parseWarnings).toContainEqual(expect.objectContaining({
+        code: "chatgpt-conversation-incomplete",
+        message: "One or more ChatGPT conversation turns were not discovered during scrolling.",
+      }));
+    }
   });
 });
 

@@ -13,6 +13,7 @@ import { parseChatGPTBlocks, safeChatGPTMessageText, type BlockParseContext } fr
 import {
   collectChatGPTConversationWindows,
   hasScrollableChatGPTConversation,
+  type ChatGPTCollectionDiagnostic,
   type ChatGPTCollectionOptions,
 } from "./chatgpt-conversation-collector";
 import { CHATGPT_DOM } from "./chatgpt-selectors";
@@ -24,6 +25,7 @@ export interface ChatGPTAdapterDependencies {
   parseBlocks?: BlockParser;
   now?: () => Date;
   collection?: ChatGPTCollectionOptions;
+  onDiagnostic?: (event: ChatGPTCollectionDiagnostic | Record<string, unknown>) => void;
 }
 
 interface MessageIdentity {
@@ -260,12 +262,29 @@ function mergeCapturedMessage(cache: MessageCache, captured: CapturedMessage): C
   return record;
 }
 
-function addWindowToCache(cache: MessageCache, captured: CapturedMessage[]): string {
+function addWindowToCache(
+  cache: MessageCache,
+  captured: CapturedMessage[],
+  onOrderingConflict?: () => void,
+): string {
   const records = captured.map((message) => mergeCapturedMessage(cache, message));
   for (let index = 1; index < records.length; index += 1) {
     const previous = records[index - 1];
     const current = records[index];
     if (previous === current) continue;
+
+    const previousTurnOrder = previous.turnOrder;
+    const currentTurnOrder = current.turnOrder;
+    const hasValidatedTurnOrder = previousTurnOrder !== undefined && currentTurnOrder !== undefined;
+    const hasPartiallyKnownTurnOrder = (previousTurnOrder === undefined) !== (currentTurnOrder === undefined);
+    if (
+      (hasValidatedTurnOrder && previousTurnOrder >= currentTurnOrder)
+      || hasPartiallyKnownTurnOrder
+    ) {
+      onOrderingConflict?.();
+      continue;
+    }
+
     const successors = cache.edges.get(previous) ?? new Set<CachedMessage>();
     successors.add(current);
     cache.edges.set(previous, successors);
@@ -324,7 +343,8 @@ function finalizeMessageOrder(cache: MessageCache, requireFullTurnSequence: bool
       .filter((value): value is number => value !== undefined)
       .sort((left, right) => left - right);
     if (turnOrders.length > 0) {
-      const hasGap = turnOrders[0] !== 0
+      const startsAtZeroOrOne = turnOrders[0] === 0 || turnOrders[0] === 1;
+      const hasGap = !startsAtZeroOrOne
         || turnOrders.some((value, index) => index > 0 && value !== turnOrders[index - 1] + 1);
       if (hasGap) {
         return { messages, complete: false, reason: "One or more ChatGPT conversation turns were not discovered during scrolling." };
@@ -339,11 +359,13 @@ export class ChatGPTAdapter implements PlatformAdapter {
   private readonly parseBlocks: BlockParser;
   private readonly now: () => Date;
   private readonly collection: ChatGPTCollectionOptions;
+  private readonly onDiagnostic?: (event: ChatGPTCollectionDiagnostic | Record<string, unknown>) => void;
 
   constructor(dependencies: ChatGPTAdapterDependencies = {}) {
     this.parseBlocks = dependencies.parseBlocks ?? parseChatGPTBlocks;
     this.now = dependencies.now ?? (() => new Date());
     this.collection = dependencies.collection ?? {};
+    this.onDiagnostic = dependencies.onDiagnostic;
   }
 
   isSupportedPage(location: PageLocation): boolean {
@@ -434,7 +456,12 @@ export class ChatGPTAdapter implements PlatformAdapter {
     try {
       const warnings: ParseWarning[] = [];
       const cache = createMessageCache();
-      addWindowToCache(cache, this.captureWindow(document, location, warnings));
+      addWindowToCache(cache, this.captureWindow(document, location, warnings), () => {
+        addWarning(warnings, {
+          code: "chatgpt-message-order-conflict",
+          message: "A ChatGPT message window contained an unvalidated message order; the conflicting edge was ignored.",
+        });
+      });
       const isScrollable = hasScrollableChatGPTConversation(document, this.collection.driver);
       return this.resultFromCache(
         document,
@@ -455,12 +482,24 @@ export class ChatGPTAdapter implements PlatformAdapter {
     try {
       const warnings: ParseWarning[] = [];
       const cache = createMessageCache();
+      let lastCapturedCount = 0;
       const outcome = await collectChatGPTConversationWindows(
-        document,
-        () => addWindowToCache(cache, this.captureWindow(document, location, warnings)),
-        this.collection,
+      document,
+      () => {
+        const captured = this.captureWindow(document, location, warnings);
+        lastCapturedCount = captured.length;
+        const signature = addWindowToCache(cache, captured, () => {
+          addWarning(warnings, {
+            code: "chatgpt-message-order-conflict",
+            message: "A ChatGPT message window contained an unvalidated message order; the conflicting edge was ignored.",
+          });
+        });
+        this.onDiagnostic?.({ type: "messages", count: captured.length, identities: captured.map((item) => item.identity.aliases), signature });
+        return signature;
+      },
+      { ...this.collection, onDiagnostic: (event) => this.onDiagnostic?.({ ...event, capturedCount: event.type === "window" ? lastCapturedCount : undefined }) },
       );
-      return this.resultFromCache(
+      const result = this.resultFromCache(
         document,
         location,
         cache,
@@ -469,6 +508,21 @@ export class ChatGPTAdapter implements PlatformAdapter {
         outcome.reason,
         true,
       );
+      if (result.status === "success") this.onDiagnostic?.({
+        type: "result",
+        messageCount: result.conversation.metadata.messageCount,
+        orderedMessages: result.conversation.messages.map((message) => ({
+          id: message.id,
+          role: message.role,
+          order: message.order,
+          turn: message.metadata.sourceAttributes?.["conversation-turn-id"],
+          hash: stableDomId("content", message.originalText),
+          summary: message.originalText.replace(/\\s+/g, " ").trim().slice(0, 80),
+        })),
+        isComplete: result.conversation.metadata.isComplete,
+        warnings: result.conversation.metadata.parseWarnings,
+      });
+      return result;
     } catch {
       return { status: "error", reason: "The ChatGPT page structure could not be read safely." };
     }

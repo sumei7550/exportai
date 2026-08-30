@@ -15,6 +15,19 @@ export interface ChatGPTCollectionOptions {
   driver?: ChatGPTScrollDriver;
   maxScrollSteps?: number;
   maxTopAttempts?: number;
+  onDiagnostic?: (event: ChatGPTCollectionDiagnostic) => void;
+}
+
+export interface ChatGPTCollectionDiagnostic {
+  type: "initial" | "window" | "final" | "restore";
+  scrollContainer?: string;
+  scrollTop?: number;
+  maxScrollTop?: number;
+  windowIndex?: number;
+  capturedCount?: number;
+  windowSignature?: string;
+  complete?: boolean;
+  reason?: string;
 }
 
 export interface ChatGPTCollectionOutcome {
@@ -128,7 +141,14 @@ export async function collectChatGPTConversationWindows(
   const driver = options.driver ?? DEFAULT_CHATGPT_SCROLL_DRIVER;
   const maxScrollSteps = options.maxScrollSteps ?? DEFAULT_MAX_SCROLL_STEPS;
   const maxTopAttempts = options.maxTopAttempts ?? DEFAULT_MAX_TOP_ATTEMPTS;
-  captureWindow();
+  let windowIndex = 0;
+  const capture = (): string => {
+    const signature = captureWindow();
+    windowIndex += 1;
+    options.onDiagnostic?.({ type: "window", windowIndex, windowSignature: signature });
+    return signature;
+  };
+  capture();
 
   let container: HTMLElement | null;
   let initialState: ChatGPTScrollState;
@@ -136,6 +156,12 @@ export async function collectChatGPTConversationWindows(
     container = driver.findContainer(document);
     if (!container) return { complete: true };
     initialState = driver.readState(container);
+    options.onDiagnostic?.({
+      type: "initial",
+      scrollContainer: `${container.tagName.toLowerCase()}${container.id ? `#${container.id}` : ""}${container.className && typeof container.className === "string" ? `.${container.className.trim().split(/\\s+/).filter(Boolean).join(".")}` : ""}`,
+      scrollTop: initialState.top,
+      maxScrollTop: initialState.max,
+    });
   } catch {
     return incomplete("The ChatGPT scroll container could not be read safely.");
   }
@@ -155,7 +181,7 @@ export async function collectChatGPTConversationWindows(
       if (!(await driver.waitForDomUpdate(document))) {
         outcome = incomplete("The ChatGPT message window did not settle while loading conversation history.");
       }
-      const signature = captureWindow();
+      const signature = capture();
       const state = driver.readState(container);
       const isStable = state.top <= POSITION_TOLERANCE
         && signature === previousTopSignature
@@ -186,7 +212,7 @@ export async function collectChatGPTConversationWindows(
       if (!(await driver.waitForDomUpdate(document))) {
         outcome = incomplete("The ChatGPT message window did not settle while collecting the conversation.");
       }
-      captureWindow();
+      capture();
 
       const after = driver.readState(container);
       if (after.max - after.top <= POSITION_TOLERANCE) {
@@ -205,7 +231,7 @@ export async function collectChatGPTConversationWindows(
       if (!(await driver.waitForDomUpdate(document))) {
         outcome = incomplete("The final ChatGPT message window did not settle.");
       }
-      captureWindow();
+      capture();
     }
   } catch {
     outcome = incomplete("ChatGPT conversation collection was interrupted before all message windows were read.");
@@ -216,6 +242,7 @@ export async function collectChatGPTConversationWindows(
       driver.scrollTo(container, restoreTop);
       await driver.waitForDomUpdate(document);
       const restored = driver.readState(container);
+      options.onDiagnostic?.({ type: "restore", scrollTop: restored.top, maxScrollTop: restored.max });
       if (Math.abs(restored.top - restoreTop) > POSITION_TOLERANCE) {
         outcome = incomplete("The conversation was collected, but the original ChatGPT scroll position could not be restored.");
       }
@@ -224,5 +251,6 @@ export async function collectChatGPTConversationWindows(
     }
   }
 
+  options.onDiagnostic?.({ type: "final", complete: outcome.complete, reason: outcome.reason });
   return outcome;
 }

@@ -177,16 +177,17 @@ describe("PDF Exporter Core", () => {
     const plan = createPdfDocumentPlan(conversation);
     expect(plan.title).toBe("ExportAI PDF fixture");
     expect(plan.metadata).toEqual({ platform: "chatgpt", model: "example-model", exportedAt: "2026-08-12T12:00:00.000Z" });
-    expect(plan.messages).toEqual([
-      {
-        role: "user",
-        blocks: [{ type: "paragraph", content: [{ text: "Hello ExportAI" }] }],
-      },
-      {
-        role: "assistant",
-        blocks: [{ type: "text", content: [{ text: "你好，世界" }] }],
-      },
-    ]);
+    expect(plan.messages).toHaveLength(2);
+    expect(plan.messages[0]).toMatchObject({
+      id: "message-user-001",
+      role: "user",
+      blocks: [{ type: "paragraph", content: [{ text: "Hello ExportAI" }] }],
+    });
+    expect(plan.messages[1]).toMatchObject({
+      id: "message-assistant-001",
+      role: "assistant",
+      blocks: [{ type: "text", content: [{ text: "你好，世界" }] }],
+    });
   });
 
   it("rejects an empty conversation", () => {
