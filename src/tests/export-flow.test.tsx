@@ -44,6 +44,11 @@ describe("shared export flow modal", () => {
     expect(container.textContent).toContain("Your file has been downloaded.");
     expect(container.textContent).toContain("Buy me a coffee");
 
+    const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+    act(() => container.querySelector("button:not([aria-label])")?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    expect(openSpy).toHaveBeenCalledWith("https://ko-fi.com/sumei7550", "_blank", "noopener,noreferrer");
+    openSpy.mockRestore();
+
     const closeButton = container.querySelector('button[aria-label="Close export message"]');
     act(() => closeButton?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
     expect(onClose).toHaveBeenCalledOnce();

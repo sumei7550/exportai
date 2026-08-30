@@ -75,7 +75,7 @@ export function ExportFlowModal({ state, onClose }: ExportFlowModalProps) {
         ) : state.status === "success" ? (
           <>
             <p className="mt-4 text-base text-slate-600" role="status">Your file has been downloaded.</p>
-            <button className="mt-6 inline-flex w-auto items-center rounded-lg bg-yellow-400 px-4 py-3 text-sm font-bold text-slate-900 hover:bg-yellow-300" onClick={() => window.open("https://example.com/buy-me-a-coffee", "_blank", "noopener,noreferrer")} type="button">☕&nbsp; Buy me a coffee</button>
+            <button className="mt-6 inline-flex w-auto items-center rounded-lg bg-yellow-400 px-4 py-3 text-sm font-bold text-slate-900 hover:bg-yellow-300" onClick={() => window.open("https://ko-fi.com/sumei7550", "_blank", "noopener,noreferrer")} type="button">☕&nbsp; Buy me a coffee</button>
           </>
         ) : (
           <p className="mt-4 text-sm text-rose-700" role="alert">{state.reason}</p>

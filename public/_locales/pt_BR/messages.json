@@ -1,0 +1,8 @@
+{
+  "extName": {
+    "message": "ExportAI"
+  },
+  "extDescription": {
+    "message": "Exporte conversas do ChatGPT para PDF, Markdown e JSON."
+  }
+}

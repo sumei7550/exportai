@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderExportFlowModal } from "../content/export-flow-modal";
 import { MESSAGE_TYPE } from "../shared/messages";
 
@@ -16,6 +16,10 @@ describe("page-level export flow modal", () => {
     renderExportFlowModal({ status: "success", format: "JSON", filename: "chat.json" });
     expect(document.querySelector('[role="dialog"]')?.textContent).toContain("Export Success!");
     expect(document.querySelector("button")?.textContent).toContain("Buy me a coffee");
+    const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+    document.querySelector("button:not([aria-label])")?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(openSpy).toHaveBeenCalledWith("https://ko-fi.com/sumei7550", "_blank", "noopener,noreferrer");
+    openSpy.mockRestore();
     document.querySelector('[aria-label="Close export message"]')?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     expect(document.getElementById("exportai-page-modal")).toBeNull();
 
