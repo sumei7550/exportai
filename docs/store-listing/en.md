@@ -10,7 +10,7 @@ English (`en`)
 
 ## Store Title
 
-ExportAI
+ExportAI: Save ChatGPT to PDF, Markdown, JSON
 
 ## Short Description
 

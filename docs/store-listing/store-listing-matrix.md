@@ -2,7 +2,7 @@
 
 | Locale | Language | Store Title | Short Description | Supported Platform | Detailed Description | Screenshot Language | RTL | Status |
 |---|---|---|---|---|---|---|---|---|
-| `en` | English | ExportAI | Export ChatGPT conversations to PDF, Markdown, and JSON. | ChatGPT | [en.md](./en.md) | English | No | Draft |
+| `en` | English | ExportAI: Save ChatGPT to PDF, Markdown, JSON | Export ChatGPT conversations to PDF, Markdown, and JSON. | ChatGPT | [en.md](./en.md) | English | No | Draft |
 | `es` | español | ExportAI | Exporta conversaciones de ChatGPT a PDF, Markdown y JSON. | ChatGPT | [es.md](./es.md) | English | No | Draft |
 | `fr` | français | ExportAI | Exportez vos conversations ChatGPT en PDF, Markdown et JSON. | ChatGPT | [fr.md](./fr.md) | English | No | Draft |
 | `it` | italiano | ExportAI | Esporta le conversazioni ChatGPT in PDF, Markdown e JSON. | ChatGPT | [it.md](./it.md) | English | No | Draft |

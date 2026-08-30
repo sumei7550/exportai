@@ -1,6 +1,6 @@
 {
   "extName": {
-    "message": "ExportAI"
+    "message": "ExportAI: Save ChatGPT to PDF, Markdown, JSON"
   },
   "extDescription": {
     "message": "Export ChatGPT conversations to PDF, Markdown, and JSON."
