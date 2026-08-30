@@ -10,7 +10,7 @@ Français (`fr`)
 
 ## Store Title
 
-ExportAI
+ExportAI : Enregistrez vos conversations ChatGPT en PDF, Markdown et JSON
 
 ## Short Description
 

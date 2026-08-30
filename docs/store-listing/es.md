@@ -10,7 +10,7 @@ Español (`es`)
 
 ## Store Title
 
-ExportAI
+ExportAI: Guarda conversaciones de ChatGPT en PDF, Markdown y JSON
 
 ## Short Description
 

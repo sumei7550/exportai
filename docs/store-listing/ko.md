@@ -10,7 +10,7 @@
 
 ## Store Title
 
-ExportAI
+ExportAI: ChatGPT 대화를 PDF, Markdown, JSON으로 저장
 
 ## Short Description
 

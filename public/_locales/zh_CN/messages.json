@@ -1,6 +1,6 @@
 {
   "extName": {
-    "message": "ExportAI"
+    "message": "ExportAI：将 ChatGPT 对话保存为 PDF、Markdown 和 JSON"
   },
   "extDescription": {
     "message": "将 ChatGPT 对话导出为 PDF、Markdown 和 JSON。"

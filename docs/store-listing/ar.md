@@ -13,7 +13,7 @@ RTL
 
 ## Store Title
 
-ExportAI
+ExportAI: احفظ محادثات ChatGPT بصيغة PDF وMarkdown وJSON
 
 ## Short Description
 

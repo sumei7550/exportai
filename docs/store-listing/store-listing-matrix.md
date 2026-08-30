@@ -3,15 +3,15 @@
 | Locale | Language | Store Title | Short Description | Supported Platform | Detailed Description | Screenshot Language | RTL | Status |
 |---|---|---|---|---|---|---|---|---|
 | `en` | English | ExportAI: Save ChatGPT to PDF, Markdown, JSON | Export ChatGPT conversations to PDF, Markdown, and JSON. | ChatGPT | [en.md](./en.md) | English | No | Draft |
-| `es` | español | ExportAI | Exporta conversaciones de ChatGPT a PDF, Markdown y JSON. | ChatGPT | [es.md](./es.md) | English | No | Draft |
-| `fr` | français | ExportAI | Exportez vos conversations ChatGPT en PDF, Markdown et JSON. | ChatGPT | [fr.md](./fr.md) | English | No | Draft |
-| `it` | italiano | ExportAI | Esporta le conversazioni ChatGPT in PDF, Markdown e JSON. | ChatGPT | [it.md](./it.md) | English | No | Draft |
-| `pt_BR` | português (Brasil) | ExportAI | Exporte conversas do ChatGPT para PDF, Markdown e JSON. | ChatGPT | [pt-BR.md](./pt-BR.md) | English | No | Draft |
-| `ar` | العربية | ExportAI | صدّر محادثات ChatGPT إلى PDF وMarkdown وJSON. | ChatGPT | [ar.md](./ar.md) | English | Yes | Draft |
-| `zh_CN` | 中文（中国） | ExportAI | 将 ChatGPT 对话导出为 PDF、Markdown 和 JSON。 | ChatGPT | [zh-CN.md](./zh-CN.md) | English | No | Draft |
-| `zh_TW` | 中文（台灣） | ExportAI | 將 ChatGPT 對話匯出為 PDF、Markdown 和 JSON。 | ChatGPT | [zh-TW.md](./zh-TW.md) | English | No | Draft |
-| `ja` | 日本語 | ExportAI | ChatGPT の会話を PDF、Markdown、JSON にエクスポート。 | ChatGPT | [ja.md](./ja.md) | English | No | Draft |
-| `ko` | 한국어 | ExportAI | ChatGPT 대화를 PDF, Markdown, JSON으로 내보내세요. | ChatGPT | [ko.md](./ko.md) | English | No | Draft |
+| `es` | español | ExportAI: Guarda conversaciones de ChatGPT en PDF, Markdown y JSON | Exporta conversaciones de ChatGPT a PDF, Markdown y JSON. | ChatGPT | [es.md](./es.md) | English | No | Draft |
+| `fr` | français | ExportAI : Enregistrez vos conversations ChatGPT en PDF, Markdown et JSON | Exportez vos conversations ChatGPT en PDF, Markdown et JSON. | ChatGPT | [fr.md](./fr.md) | English | No | Draft |
+| `it` | italiano | ExportAI: Salva le conversazioni di ChatGPT in PDF, Markdown e JSON | Esporta le conversazioni ChatGPT in PDF, Markdown e JSON. | ChatGPT | [it.md](./it.md) | English | No | Draft |
+| `pt_BR` | português (Brasil) | ExportAI: Salve conversas do ChatGPT em PDF, Markdown e JSON | Exporte conversas do ChatGPT para PDF, Markdown e JSON. | ChatGPT | [pt-BR.md](./pt-BR.md) | English | No | Draft |
+| `ar` | العربية | ExportAI: احفظ محادثات ChatGPT بصيغة PDF وMarkdown وJSON | صدّر محادثات ChatGPT إلى PDF وMarkdown وJSON. | ChatGPT | [ar.md](./ar.md) | English | Yes | Draft |
+| `zh_CN` | 中文（中国） | ExportAI：将 ChatGPT 对话保存为 PDF、Markdown 和 JSON | 将 ChatGPT 对话导出为 PDF、Markdown 和 JSON。 | ChatGPT | [zh-CN.md](./zh-CN.md) | English | No | Draft |
+| `zh_TW` | 中文（台灣） | ExportAI：將 ChatGPT 對話儲存為 PDF、Markdown 和 JSON | 將 ChatGPT 對話匯出為 PDF、Markdown 和 JSON。 | ChatGPT | [zh-TW.md](./zh-TW.md) | English | No | Draft |
+| `ja` | 日本語 | ExportAI: ChatGPTの会話をPDF、Markdown、JSONで保存 | ChatGPT の会話を PDF、Markdown、JSON にエクスポート。 | ChatGPT | [ja.md](./ja.md) | English | No | Draft |
+| `ko` | 한국어 | ExportAI: ChatGPT 대화를 PDF, Markdown, JSON으로 저장 | ChatGPT 대화를 PDF, Markdown, JSON으로 내보내세요. | ChatGPT | [ko.md](./ko.md) | English | No | Draft |
 
 ## Source of Truth
 
